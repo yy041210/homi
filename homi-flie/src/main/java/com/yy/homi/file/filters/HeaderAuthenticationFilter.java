@@ -1,6 +1,7 @@
 package com.yy.homi.file.filters;
 
 
+import com.yy.homi.common.constant.SecurityConstants;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -24,9 +25,8 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
         // 注意：这里不再去找 "Authorization" 头，因为 JWT 已经在网关被拆解了。
         // 我们直接拿网关传给我们的“成品”。
-        String userId = request.getHeader("X-User-Id");
-        String authorities = request.getHeader("X-User-Authorities");
-
+        String userId = request.getHeader(SecurityConstants.USER_ID_HEADER);
+        String authorities = request.getHeader(SecurityConstants.USER_ROLE_HEADER);
         // 如果这两个头存在，说明请求是从网关合法转发过来的
         if (userId != null && authorities != null) {
 
