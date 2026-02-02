@@ -29,7 +29,12 @@ public class CheckCodeServiceImpl implements CheckCodeService {
             return R.fail("验证码类型不能为空");
         }
 
-        return checkCodeGenerateStrategyContext.STRATEGY_MAP.get(checkCodeType).generate(checkCodeGenerateReqDTO);
+        CheckCodeGenerateStrategy checkCodeGenerateStrategy = checkCodeGenerateStrategyContext.STRATEGY_MAP.get(checkCodeType);
+        if(checkCodeGenerateStrategy == null){
+            return R.fail("没有 "+ checkCodeType +" 的验证码生成策略！");
+        }
+
+        return checkCodeGenerateStrategy.generate(checkCodeGenerateReqDTO);
     }
 
     @Override

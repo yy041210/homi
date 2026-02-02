@@ -68,4 +68,4 @@ wx:
   open:
     app-id: wxbc753771b7c965ea
     app-secret: 33d7ec5135fff3acf855a2054541391e
-    redirect-uri: http://16918f9e.r34.cpolar.top/api/homi-rbac/auth/weChatLogin
+    redirect-uri: http://3175a35f.r34.cpolar.top/api/homi-rbac/auth/weChatLogin
