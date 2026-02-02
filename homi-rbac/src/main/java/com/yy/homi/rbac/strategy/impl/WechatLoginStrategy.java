@@ -158,7 +158,7 @@ public class WechatLoginStrategy implements UserLoginStrategy {
         result.put("access_token", accessToken.getValue()); // JWT 字符串
         result.put("expires_in", accessToken.getExpiresIn()); // 有效期 秒
         result.put("user_id", openId); // 用户id
-        LoginWebSocketServer.sendMessage(sceneId,result);  //写出webSocket
+        LoginWebSocketServer.sendMessage(sceneId,R.ok(result));  //写出webSocket
         return R.ok(result);
     }
 }

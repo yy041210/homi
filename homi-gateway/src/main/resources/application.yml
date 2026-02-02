@@ -37,16 +37,24 @@ spring:
             # 转发到下游服务时变成: http://homi-rbaclist/homi-rbac/***
             - StripPrefix=1
             #- RewritePath=/api/rbac/(?<segment>.*), /$\{segment} #这种方式也可以都一样
-        - id: homi-rbac-ws  #路由唯一标识
-          uri: ws://homi-rbac  #从consul发现服务并负载均衡
+        - id: homi-rbac-ws
+          uri: ws://homi-rbac
           predicates:
-            - Path= /api/homi-rbac/**  #路由匹配规则
+            - Path= /api/homi-rbac/**
           filters:
             - StripPrefix=1
+        #文件服务
         - id: homi-file-route
           uri: lb://homi-file
           predicates:
             - Path= /api/homi-file/**
+          filters:
+            - StripPrefix=1
+        #第三方服务
+        - id: homi-third-party-route
+          uri: lb://homi-third-party
+          predicates:
+            - Path= /api/homi-third-party/**
           filters:
             - StripPrefix=1
 
@@ -61,6 +69,8 @@ homi:
     ignore-urls:
       - /**/images/**
       - /**/static/**
+      - /**/qrcode/**     #二维码相关接口
+      - /**/checkcode/**  #二维码相关接口
       - /**/auth/**
       - /**/actuator/health
       - /**/oauth/login

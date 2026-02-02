@@ -1,5 +1,6 @@
 package com.yy.homi.rbac.strategy.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.dto.request.LoginReqDTO;
 import com.yy.homi.rbac.strategy.UserLoginStrategy;
@@ -29,6 +30,12 @@ public class PhoneLoginStrategy implements UserLoginStrategy {
 
     @Override
     public R login(LoginReqDTO loginReqDTO) {
+        String phone = loginReqDTO.getPhone();
+        String uuid = loginReqDTO.getUuid();
+        String code = loginReqDTO.getCode();
+        if(StrUtil.isBlank(phone) || StrUtil.isBlank(uuid) || StrUtil.isBlank(code)){
+            return R.fail("手机号,uuid,验证码不能为空！");
+        }
         return R.fail("服务未开通!");
     }
 }

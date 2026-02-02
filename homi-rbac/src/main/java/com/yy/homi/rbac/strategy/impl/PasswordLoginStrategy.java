@@ -5,7 +5,6 @@ import com.yy.homi.common.constant.RedisConstants;
 import com.yy.homi.common.constant.SecurityConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.SysUserCache;
-import com.yy.homi.rbac.domain.vo.SysUserVO;
 import com.yy.homi.common.exception.ServiceException;
 import com.yy.homi.rbac.domain.convert.SysUserConvert;
 import com.yy.homi.rbac.domain.dto.request.LoginReqDTO;
