@@ -1,0 +1,71 @@
+server:
+  port: 9010
+management:
+  server:
+    base-path: /actuator             # 监控基础路径设为根，不再携带 /actuator 前缀（可选）
+  endpoints:
+    web:
+      exposure:
+        include: 'health'    # 仅暴露健康检查
+
+spring:
+  application:
+    name: homi-gateway
+  jmx:
+    enabled: false # 禁用 JMX 注册，防止 Bean 冲突
+  cloud:
+    #consul注重中心配置
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: ${spring.application.name} #服务名
+        instance-id: ${spring.application.name}-${server.port}  #实例id
+        #必须开启健康检查,否者consul认为服务离线
+        health-check-path: ${management.server.base-path}/${management.endpoints.web.exposure.include}
+        health-check-interval: 10s
+    #网关配置
+    gateway:
+      routes:
+        #认证授权服务
+        - id: homi-rbac-route  #路由唯一标识
+          uri: lb://homi-rbac  #从consul发现服务并负载均衡
+          predicates:
+            - Path= /api/homi-rbac/**  #路由匹配规则
+          filters:
+            # 请求 http://gateway:9000/api/homi-rbac/list
+            # 转发到下游服务时变成: http://homi-rbaclist/homi-rbac/***
+            - StripPrefix=1
+            #- RewritePath=/api/rbac/(?<segment>.*), /$\{segment} #这种方式也可以都一样
+        - id: homi-rbac-ws  #路由唯一标识
+          uri: ws://homi-rbac  #从consul发现服务并负载均衡
+          predicates:
+            - Path= /api/homi-rbac/**  #路由匹配规则
+          filters:
+            - StripPrefix=1
+        - id: homi-file-route
+          uri: lb://homi-file
+          predicates:
+            - Path= /api/homi-file/**
+          filters:
+            - StripPrefix=1
+
+# 日志配置
+logging:
+  level:
+    org.springframework.web: debug # 设置 web 相关的日志为 DEBUG，你就能看到所有接口路径的加载了
+
+#自定义网关白名单配置
+homi:
+  auth:
+    ignore-urls:
+      - /**/images/**
+      - /**/static/**
+      - /**/auth/**
+      - /**/actuator/health
+      - /**/oauth/login
+      - /**/oauth/token
+      - /**/homi-rbac/ws/**
+
+
+

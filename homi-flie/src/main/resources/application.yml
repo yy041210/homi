@@ -1,0 +1,85 @@
+server:
+  port: 9003
+  servlet:
+    context-path: /homi-file
+management:
+  server:
+    base-path: /actuator             # 监控基础路径设为根，不再携带 /actuator 前缀（可选）
+  endpoints:
+    web:
+      exposure:
+        include: 'health'    # 仅暴露健康检查
+# application.yml
+
+spring:
+  application:
+    name: homi-file
+  devtools:
+    # 1. 热重启配置
+    restart:
+      enabled: false  # 默认就是 true，可以关闭
+  servlet:
+    multipart:
+      max-file-size: 2048MB  # 限制单文件大小
+      max-request-size: 4096MB
+  cloud:
+    #consul注重中心配置
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: ${spring.application.name} #服务名
+        instance-id: ${spring.application.name}-${server.port}  #实例id
+        #必须开启健康检查,否者consul认为服务离线
+        health-check-path: ${server.servlet.context-path}${management.server.base-path}/${management.endpoints.web.exposure.include}
+        health-check-interval: 10s
+  datasource:
+    url: jdbc:mysql://localhost:3306/homi_file?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8
+    username: root
+    password: 1234
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    timeout: 3000  #超时时间默认 3000 单位ms
+  jackson:
+    serialization:
+      write-dates-as-timestamps: true #设为 true，Jackson 会把 Date 转为 Long 时间戳
+      fail-on-empty-beans: false   # 允许对象中没有属性时不报错
+    # 即使传时间戳，也要保留时区，确保解析 Date 对象时逻辑正确
+    time-zone: GMT+8
+
+#springdoc相关配置
+#springdoc配置
+springdoc:
+  api-docs:
+    # 自定义文档元数据访问路径，默认就是 /v3/api-docs
+    path: /v3/api-docs
+  swagger-ui:
+    # 自定义 Swagger 界面访问路径，默认 http://localhost:9004/homi-third-party/swagger-ui.html
+    path: /swagger-ui.html
+    # 开启操作 ID 排序
+    operations-sorter: alpha
+    # 开启标签排序
+    tags-sorter: alpha
+  # 自动扫描的包路径（重要：减少不必要的类加载）
+  packages-to-scan: com.yy.homi.file
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.yy.homi.file.domain
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 开启SQL日志
+
+logging:
+  level:
+    org.springframework.web: info # 设置 web 相关的日志为 DEBUG，你就能看到所有接口路径的加载了
+    com.homi.file.mapper: debug # 打印 Mapper 下的 SQL 执行详情
+
+# Minio 配置
+minio:
+  endpoint: http://127.0.0.1:9000
+  access_key: minioadmin
+  secret_key: minioadmin
+  bucket_image: homi-image  # 图片桶
+  bucket_video: homi-video  # 视频桶
+  bucket_default: homi-file # 其他文件桶

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Homi Upload Pro (Smart Preview)</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; display: flex; justify-content: center; padding: 20px; background: #f0f2f5; margin: 0; }
+        .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+        /* 进度条 */
+        .progress-container { margin: 15px 0; }
+        progress { width: 100%; height: 16px; border-radius: 8px; overflow: hidden; border: none; }
+        progress::-webkit-progress-bar { background-color: #eee; }
+        progress::-webkit-progress-value { background-color: #4f46e5; transition: width 0.3s ease; }
+
+        /* 虚拟控制台 */
+        .console {
+            background: #1a1a1a; color: #ccc; padding: 12px; border-radius: 8px;
+            font-family: 'Consolas', monospace; font-size: 11px; height: 180px;
+            overflow-y: auto; line-height: 1.5; border: 1px solid #333;
+        }
+        .log-item { margin-bottom: 2px; border-bottom: 1px solid #252525; }
+        .log-info { color: #00b0ff; }
+        .log-success { color: #00e676; }
+        .log-error { color: #ff5252; }
+        .log-warn { color: #ffd740; }
+
+        /* 交互元素 */
+        .upload-area { border: 2px dashed #cbd5e1; padding: 40px; text-align: center; cursor: pointer; border-radius: 8px; color: #64748b; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 8px; transition: all 0.2s; }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-secondary { background: #94a3b8; color: white; }
+        .btn-preview { background: #16a34a; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .btn-preview:hover { background: #15803d; transform: translateY(-1px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .fade-enter-active { transition: opacity 0.5s; }
+        .fade-enter-from { opacity: 0; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="container">
+    <div class="card">
+        <h3 style="margin: 0 0 15px 0; color: #1e293b;">文件分片上传</h3>
+
+        <div v-if="!selectedFile" class="upload-area" @click="$refs.fileInput.click()">
+            <input type="file" ref="fileInput" @change="handleFileChange" style="display:none">
+            <div style="font-size: 24px;">📁</div>
+            点击选择文件
+        </div>
+
+        <div v-else>
+            <div style="font-size: 13px; color: #475569; margin-bottom: 10px;">
+                <strong>文件:</strong> {{ selectedFile.name }} <br>
+                <strong>状态:</strong> {{ statusText }}
+            </div>
+
+            <div class="progress-container">
+                <progress :value="progress" max="100"></progress>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 4px; color: #64748b;">
+                    <span>{{ progress }}%</span>
+                    <span>{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</span>
+                </div>
+            </div>
+
+            <div v-if="!finalUrl">
+                <button class="btn-primary" @click="startUpload" :disabled="uploading">
+                    {{ uploading ? '上传中...' : '开始上传' }}
+                </button>
+                <button class="btn-secondary" @click="reset" :disabled="uploading">重新选择</button>
+            </div>
+
+            <div v-else class="fade-enter-active">
+                <a :href="finalUrl" target="_blank" class="btn-preview" style="height: 40px; margin-bottom: 8px; border-radius: 6px;">
+                    点击预览文件
+                </a>
+                <button class="btn-secondary" @click="reset">上传另一个</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="console" ref="logContainer">
+        <div v-for="(log, index) in logs" :key="index" class="log-item">
+            <span style="color:#555">[{{ log.time }}]</span>
+            <span :class="'log-' + log.type"> {{ log.msg }}</span>
+        </div>
+        <div v-if="logs.length === 0" style="color: #444;">> 等待选择文件...</div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, nextTick } = Vue;
+
+    createApp({
+        setup() {
+            const selectedFile = ref(null);
+            const uploading = ref(false);
+            const progress = ref(0);
+            const statusText = ref("已就绪");
+            const finalUrl = ref("");
+            const logs = ref([]);
+            const logContainer = ref(null);
+
+            const CHUNK_SIZE = 1024 * 1024 * 20;
+            const API_BASE = "http://localhost:9003";
+
+            const addLog = (msg, type = 'info') => {
+                const now = new Date();
+                const timeStr = now.toTimeString().split(' ')[0];
+                logs.value.push({ time: timeStr, msg, type });
+                nextTick(() => {
+                    if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight;
+                });
+            };
+
+            const http = axios.create({
+                transformResponse: [function (data) {
+                    if (typeof data !== 'string') return data;
+                    try {
+                        const safeData = data.replace(/([^\\]":\s*)(\d{15,})([,\}\s])/g, '$1"$2"$3');
+                        return JSON.parse(safeData);
+                    } catch (e) { return data; }
+                }]
+            });
+
+            const calculateHash = async (fileOrBlob) => {
+                const buffer = await fileOrBlob.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+                return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+            };
+
+            const handleFileChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    selectedFile.value = file;
+                    progress.value = 0;
+                    finalUrl.value = "";
+                    addLog(`加载文件: ${file.name}`);
+                }
+            };
+
+            const startUpload = async () => {
+                const file = selectedFile.value;
+                uploading.value = true;
+                addLog(">>> 启动任务...");
+
+                try {
+                    statusText.value = "校验中...";
+                    const fileHash = await calculateHash(file);
+                    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+                    // 1. 初始化并检查秒传
+                    const initRes = await http.get(`${API_BASE}/sysuploadtask/initchunkuploadtask`, {
+                        params: { fileName: file.name, fileHash, totalSize: file.size, totalChunks }
+                    });
+                    const resData = initRes.data.data;
+                    const { taskId, status, url, finishChunks, bucketName } = resData;
+
+                    if (status === "COMPLETED" || url) {
+                        addLog("检测到秒传命中！", "success");
+                        finalUrl.value = url || (typeof resData === 'string' ? resData : '');
+                        progress.value = 100;
+                        statusText.value = "秒传完成";
+                        return;
+                    }
+
+                    const finishedSet = new Set((finishChunks || []).map(c => Number(c.chunkIndex)));
+
+                    // 2. 分片循环
+                    for (let i = 1; i <= totalChunks; i++) {
+                        if (finishedSet.has(i)) {
+                            addLog(`分片 [${i}] 略过`, "warn");
+                            progress.value = Math.floor((i / totalChunks) * 100);
+                            continue;
+                        }
+
+                        // 实时 checkChunk
+                        const checkRes = await http.get(`${API_BASE}/syschunkfile/checkChunk`, {
+                            params: { taskId, chunkIndex: i }
+                        });
+                        if (checkRes.data.data === true) {
+                            addLog(`分片 [${i}] 后端存在，略过`, "warn");
+                            progress.value = Math.floor((i / totalChunks) * 100);
+                            continue;
+                        }
+
+                        statusText.value = `上传中 (${i}/${totalChunks})`;
+                        const start = (i - 1) * CHUNK_SIZE;
+                        const chunkBlob = file.slice(start, Math.min(file.size, i * CHUNK_SIZE));
+                        const chunkHash = await calculateHash(chunkBlob);
+
+                        const formData = new FormData();
+                        formData.append("taskId", taskId);
+                        formData.append("chunkIndex", i);
+                        formData.append("chunkFile", chunkBlob);
+                        formData.append("chunkHash", chunkHash);
+                        formData.append("bucketName", bucketName);
+
+                        await http.post(`${API_BASE}/syschunkfile/uploadChunk`, formData);
+                        addLog(`分片 [${i}] 成功`, "info");
+                        progress.value = Math.floor((i / totalChunks) * 100);
+                    }
+
+                    // 3. 合并
+                    statusText.value = "正在合并...";
+                    addLog("申请合并文件...");
+                    const mergeRes = await http.get(`${API_BASE}/syschunkfile/mergeChunk`, { params: { taskId } });
+
+                    const mData = mergeRes.data.data;
+                    finalUrl.value = typeof mData === 'string' ? mData : (mData.url || mData);
+
+                    addLog("任务圆满完成！", "success");
+                    progress.value = 100;
+                    statusText.value = "上传成功";
+
+                } catch (err) {
+                    addLog(`异常: ${err.message}`, "error");
+                    statusText.value = "任务失败";
+                } finally {
+                    uploading.value = false;
+                }
+            };
+
+            const reset = () => {
+                selectedFile.value = null;
+                progress.value = 0;
+                finalUrl.value = "";
+                logs.value = [];
+                addLog("重置成功");
+            };
+
+            return { selectedFile, uploading, progress, statusText, logs, logContainer, finalUrl, handleFileChange, startUpload, reset };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

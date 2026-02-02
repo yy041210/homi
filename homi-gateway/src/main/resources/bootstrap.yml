@@ -1,0 +1,21 @@
+#spring:
+#  application:
+#    name: homi-gateway # serviceName
+#  profiles:
+#    active: dev        #profile
+#  cloud:
+#    consul:
+#      host: localhost
+#      port: 8500
+#      config:
+#        prefix: consul/homiConfig
+#        enabled: true
+#        format: yaml            # 指定配置内容使用 YAML 格式
+#        profile-separator: '-'  # 关键：将服务名和环境名用 '-' 连接
+#        data-key: 'conf' #找的路径是consul/homiConfig/homi-gateway-dev/conf,如果不设置consul/homiConfig/homi-gateway-dev/data文件
+#        fail-fast: true # 找不到配置直接让程序崩溃，并显示尝试访问的路径
+#        watch:
+#          enabled: true         # 开启热加载监听
+
+
+

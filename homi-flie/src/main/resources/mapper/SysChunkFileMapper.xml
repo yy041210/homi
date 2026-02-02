@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.file.mapper.SysChunkFileMapper">
+
+    <resultMap id="BaseResultMap" type="com.yy.homi.file.domain.entity.SysChunkFile">
+        <id column="id" property="id" />
+        <result column="task_id" property="taskId" />
+        <result column="bucket_name" property="bucketName" />
+        <result column="chunk_index" property="chunkIndex" />
+        <result column="chunk_hash" property="chunkHash" />
+        <result column="chunk_objet_name" property="chunkObjectName" />
+        <result column="size" property="size" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, task_id,bucket_name, chunk_index, chunk_hash, objet_name, size, create_time
+    </sql>
+
+    <select id="selectFinishedIndexes" resultType="java.lang.Integer">
+        SELECT chunk_index
+        FROM sys_chunk_file
+        WHERE task_id = #{taskId}
+        ORDER BY chunk_index ASC
+    </select>
+
+    <select id="sumUploadedSize" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(size), 0)
+        FROM sys_chunk_file
+        WHERE task_id = #{taskId}
+    </select>
+
+</mapper>

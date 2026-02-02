@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homi Pro Upload</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/json-bigint@1.0.0/dist/json-bigint.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/spark-md5@3.0.2/spark-md5.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin-slow {
+            animation: spin 3s linear infinite;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen flex items-center justify-center p-6">
+
+<div id="app" class="max-w-md w-full glass rounded-3xl shadow-2xl p-8 border border-white">
+    <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-gray-800">文件分片上传</h2>
+        <p class="text-sm text-gray-500 mt-2">支持秒传、断点续传与并发校验</p>
+    </div>
+
+    <div v-if="!selectedFile" class="relative group">
+        <input type="file" @change="handleFileChange"
+               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+        <div class="border-2 border-dashed border-indigo-300 rounded-2xl p-10 text-center group-hover:border-indigo-500 transition-colors">
+            <svg class="w-12 h-12 mx-auto text-indigo-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <p class="text-gray-600">点击或拖拽文件至此</p>
+        </div>
+    </div>
+
+    <div v-else class="space-y-6">
+        <div class="flex items-center space-x-4 bg-white p-4 rounded-2xl shadow-sm">
+            <div class="relative w-16 h-16">
+                <svg class="w-full h-full transform -rotate-90">
+                    <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" fill="transparent"
+                            class="text-gray-100"/>
+                    <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" fill="transparent"
+                            :stroke-dasharray="175.9"
+                            :stroke-dashoffset="175.9 - (175.9 * progress / 100)"
+                            stroke-linecap="round" class="text-indigo-600 transition-all duration-500"/>
+                </svg>
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold">{{ progress }}%</span>
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-sm font-semibold text-gray-700 truncate">{{ selectedFile.name }}</p>
+                <p class="text-xs text-gray-400">{{ formatSize(selectedFile.size) }}</p>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center space-x-2 text-indigo-600">
+            <svg v-if="uploading" class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+                        fill="none"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-sm font-medium">{{ statusText }}</span>
+        </div>
+
+        <div class="flex space-x-3">
+            <button @click="startUpload" :disabled="uploading"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition disabled:opacity-50">
+                {{ progress > 0 ? '继续上传' : '立即开始' }}
+            </button>
+            <button @click="reset"
+                    class="px-4 py-3 border border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 transition">
+                取消
+            </button>
+        </div>
+    </div>
+
+    <div v-if="finalUrl"
+         class="mt-8 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center justify-between">
+        <div class="flex items-center text-green-700 text-sm">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+            </svg>
+            上传成功
+        </div>
+        <a :href="finalUrl" target="_blank" class="text-indigo-600 text-sm font-bold hover:underline">预览文件</a>
+    </div>
+</div>
+
+<script>
+    const {createApp, ref} = Vue;
+
+    // 在 setup() 内部最上方定义
+
+
+    createApp({
+        setup() {
+            // 2. 新增：配置大数字安全的请求实例
+
+
+            const selectedFile = ref(null);
+            const uploading = ref(false);
+            const progress = ref(0);
+            const statusText = ref("等待操作");
+            const finalUrl = ref("");
+
+            const CHUNK_SIZE = 1024 * 1024 * 20; // 20MB
+            const API_BASE = "http://localhost:9003";
+
+            // 在 setup() 内部最上方定义
+            // 无需 JSONbigNative 库，直接使用原生正则处理
+            const http = axios.create({
+                transformResponse: [function (data) {
+                    if (!data || typeof data !== 'string') {
+                        return data;
+                    }
+                    try {
+                        // 使用正则表达式匹配 JSON 字符串中的超大数字
+                        // 匹配原理：查找冒号后面、以数字开头且超过 15 位的数值
+                        const bigIntSafeData = data.replace(/([^\\]":\s*)(\d{15,})([,\}\s])/g, '$1"$2"$3');
+                        return JSON.parse(bigIntSafeData);
+                    } catch (err) {
+                        // 如果正则替换或解析失败，尝试原样返回（由 Axios 默认处理）
+                        return data;
+                    }
+                }]
+            });
+
+            const handleFileChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    selectedFile.value = file;
+                    finalUrl.value = "";
+                    progress.value = 0;
+                    statusText.value = "准备就绪";
+                }
+            };
+
+            const formatSize = (bytes) => {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            };
+
+            // 核心上传逻辑
+            const startUpload = async () => {
+                const file = selectedFile.value;
+                uploading.value = true;
+
+                try {
+                    statusText.value = "正在扫描文件指纹...";
+                    const fileHash = await calculateFileHash(file);
+                    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+                    statusText.value = "与服务器握手中...";
+                    // 3. 修改：使用 http 实例发送请求
+                    const initRes = await http.get(`${API_BASE}/sysuploadtask/initchunkuploadtask`, {
+                        params: {fileName: file.name, fileHash, totalSize: file.size, totalChunks}
+                    });
+
+                    // 此时 taskId 已经是正确的字符串了
+                    const taskId = initRes.data.data.taskId;
+
+                    const {status, url, bucketName,  finishChunks} = initRes.data.data;
+
+                    if (status === "COMPLETED" || url) {
+                        progress.value = 100;
+                        finalUrl.value = url;
+                        statusText.value = "秒传成功！";
+                        uploading.value = false;
+                        return;
+                    }
+
+                    // 修复：确保分片索引是数字比对
+                    const finishedIndices = new Set((finishChunks || []).map(c => Number(c.chunkIndex)));
+
+                    for (let i = 1; i <= totalChunks; i++) {
+                        statusText.value = `上传中: ${i}/${totalChunks}`;
+
+                        if (finishedIndices.has(i)) {
+                            updateProgress(i, totalChunks);
+                            continue;
+                        }
+
+                        // 修改：使用 http 实例
+                        const checkRes = await http.get(`${API_BASE}/syschunkfile/checkChunk`, {
+                            params: {taskId, chunkIndex: i}
+                        });
+
+                        if (checkRes.data.data === true) {
+                            updateProgress(i, totalChunks);
+                            continue;
+                        }
+
+                        const start = (i - 1) * CHUNK_SIZE;
+                        const chunkBlob = file.slice(start, Math.min(file.size, i * CHUNK_SIZE));
+                        const chunkHash = await calculateBufferHash(chunkBlob);
+                        const formData = new FormData();
+                        formData.append("taskId", taskId);
+                        formData.append("chunkIndex", i);
+                        formData.append("chunkFile", chunkBlob);
+                        formData.append("chunkHash", chunkHash);
+                        formData.append("bucketName", bucketName);
+
+                        // 修改：使用 http 实例
+                        await http.post(`${API_BASE}/syschunkfile/uploadChunk`, formData);
+                        updateProgress(i, totalChunks);
+                    }
+
+                    statusText.value = "分片已就绪，正在请求合并...";
+
+                    // 修改：使用 http 实例
+                    const mergeRes = await http.get(`${API_BASE}/syschunkfile/mergeChunk`, {
+                        params: { taskId: taskId },
+                        timeout: 60000
+                    });
+
+                    if (mergeRes.data.code === 200 || mergeRes.status === 200) {
+                        const resultData = mergeRes.data.data;
+                        finalUrl.value = typeof resultData === 'string' ? resultData : resultData.url;
+                        statusText.value = "上传完成";
+                    } else {
+                        throw new Error(mergeRes.data.msg || "合并失败");
+                    }
+                } catch (err) {
+                    statusText.value = "出错: " + (err.response?.data?.msg || err.message);
+                } finally {
+                    uploading.value = false;
+                }
+            };
+
+            const updateProgress = (current, total) => {
+                progress.value = Math.floor((current / total) * 100);
+            };
+
+            const calculateBufferHash = async (blob) => {
+                const arrayBuffer = await blob.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            };
+
+            const calculateFileHash = async (file) => {
+                const arrayBuffer = await file.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            };
+
+            const reset = () => {
+                selectedFile.value = null;
+                uploading.value = false;
+                progress.value = 0;
+                finalUrl.value = "";
+            };
+
+            return {
+                selectedFile,
+                uploading,
+                progress,
+                statusText,
+                finalUrl,
+                handleFileChange,
+                startUpload,
+                formatSize,
+                reset
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

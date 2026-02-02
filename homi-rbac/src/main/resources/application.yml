@@ -1,0 +1,91 @@
+server:
+  port: 9002
+  servlet:
+    context-path: /homi-rbac
+management:
+  server:
+    base-path: /actuator             # 监控基础路径设为根，不再携带 /actuator 前缀（可选）
+  endpoints:
+    web:
+      exposure:
+        include: 'health'    # 仅暴露健康检查
+
+spring:
+  application:
+    name: homi-rbac
+  devtools:
+    # 1. 热重启配置
+    restart:
+      enabled: false  # 默认就是 true，可以关闭
+  cloud:
+    #consul注重中心配置
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: ${spring.application.name} #服务名
+        instance-id: ${spring.application.name}-${server.port}  #实例id
+        #必须开启健康检查,否者consul认为服务离线
+        health-check-path: ${server.servlet.context-path}${management.server.base-path}/${management.endpoints.web.exposure.include}
+        health-check-interval: 10s
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 请根据你的实际情况修改数据库名、账号和密码
+    url: jdbc:mysql://localhost:3306/homi_rbac?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+    username: root
+    password: 1234
+  jackson:
+    serialization:
+      write-dates-as-timestamps: true #设为 true，Jackson 会把 Date 转为 Long 时间戳
+      fail-on-empty-beans: false   # 允许对象中没有属性时不报错
+    # 即使传时间戳，也要保留时区，确保解析 Date 对象时逻辑正确
+    time-zone: GMT+8
+  redis:
+    host: localhost
+    port: 6379
+
+#springdoc
+springdoc:
+  api-docs:
+    # 自定义文档元数据访问路径，默认就是 /v3/api-docs
+    path: /v3/api-docs
+  swagger-ui:
+    # 自定义 Swagger 界面访问路径，默认 http://localhost:9002/homi-rbac/swagger-ui.html
+    path: /swagger-ui.html
+    # 开启操作 ID 排序
+    operations-sorter: alpha
+    # 开启标签排序
+    tags-sorter: alpha
+  # 自动扫描的包路径（重要：减少不必要的类加载）
+  packages-to-scan: com.yy.homi.rbac
+
+# MyBatis-Plus 相关配置
+mybatis-plus:
+  type-aliases-package: com.yy.homi.rbac.domain  # 搜索指定包下的实体类，Mapper XML 中可以直接写类名，不用写全限定类名
+  mapper-locations: classpath:mapper/*.xml # 指定 Mapper XML 的存放位置
+  configuration:
+    map-underscore-to-camel-case: true  # 开启自动驼峰命名转换（重要：否则 user_name 无法映射到 userName）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 开启日志打印，开发阶段能看到 SQL 语句
+  global-config:
+    db-config:
+      id-type: assign_id # 设置主键策略为雪花算法（对应你在实体类里配的 IdType.ASSIGN_ID）
+
+#pagehelper相关配置
+pagehelper:
+  # 自动识别数据库类型 (MySQL, Oracle, PostgreSQL 等)
+  helper-dialect: mysql
+  # 启用分页参数合理化
+  # 启用后，如果 pageNum < 1 会查询第一页，如果 pageNum > 总页数 会查询最后一页
+  reasonable: true
+
+# 日志配置
+logging:
+  level:
+    org.springframework.web: info # 设置 web 相关的日志为 DEBUG，你就能看到所有接口路径的加载了
+    com.homi.rbac.mapper: debug # 打印 Mapper 下的 SQL 执行详情
+
+#微信配置
+wx:
+  open:
+    app-id: wxbc753771b7c965ea
+    app-secret: 33d7ec5135fff3acf855a2054541391e

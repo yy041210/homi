@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.file.mapper.SysFileMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yy.homi.file.domain.entity.SysFile">
+        <!-- 主键 -->
+        <id column="id" property="id" jdbcType="BIGINT"/>
+
+        <!-- 普通字段 -->
+        <result column="file_name" property="fileName" jdbcType="VARCHAR"/>
+        <result column="file_hash" property="fileHash" jdbcType="VARCHAR"/>
+        <result column="object_name" property="objectName" jdbcType="VARCHAR"/>
+        <result column="bucket_name" property="bucketName" jdbcType="VARCHAR"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="extension" property="extension" jdbcType="VARCHAR"/>
+        <result column="size" property="size" jdbcType="BIGINT"/>
+        <result column="create_by" property="createBy" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="del_flag" property="delFlag" jdbcType="TINYINT"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id
+        ,
+        file_name,
+        file_hash,
+        object_name,
+        bucket_name,
+        url,
+        extension,
+        size,
+        create_by,
+        create_time,
+        del_flag
+    </sql>
+
+</mapper>
