@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient(name = "homi-rbac")
+@FeignClient(name = "homi-third-party",path = "/homi-third-party/checkcode")
 public interface CheckCodeFeign {
 
     //校验验证码
