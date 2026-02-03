@@ -15,8 +15,23 @@ public class RbacConstants {
 
     /** * 显隐状态 (对应 visible 字段)
      */
-    public static final Integer MENU_VISIBLE = 0;    // 显示
-    public static final Integer MENU_HIDDEN = 1;     // 隐藏
+    public static final int MENU_VISIBLE = 0;    // 显示
+    public static final int MENU_HIDDEN = 1;     // 隐藏
+
+    /**
+     * 用户性别常量
+     */
+    public static final int SEX_MALE = 0; //男
+    public static final int SEX_FEMALE = 1; //女
+    public static final int SEX_UNKNOWN = 2; //未知
+
+    /**
+     * 微信扫码登录，第一次默认创建账号
+     * 用户名：homi + 毫秒级时间戳(36进制) + 2位随机数
+     * 密码：123456
+     */
+    public static final String DEFAULT_USERNAME_PREFIX = "homi_";
+    public static final String DEFAULT_PASSWORD = "123456";
 
     /** * 顶级节点标识
      */

@@ -12,7 +12,7 @@
         <result property="phonenumber" column="phonenumber"/>
         <result property="sex" column="sex"/>
         <result property="avatar" column="avatar"/>
-        <result property="unionId" column="unionId"/>
+        <result property="openId" column="open_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>

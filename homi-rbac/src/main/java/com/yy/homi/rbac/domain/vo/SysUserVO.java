@@ -35,6 +35,9 @@ public class SysUserVO implements Serializable {
     /** 头像地址 */
     private String avatar;
 
+    /** 微信统一标识 (跨端唯一) */
+    private String openId;
+
     /** 备注 */
     private String remark;
 

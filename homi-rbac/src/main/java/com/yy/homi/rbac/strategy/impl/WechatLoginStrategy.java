@@ -3,10 +3,8 @@ package com.yy.homi.rbac.strategy.impl;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.yy.homi.common.constant.CommonConstants;
-import com.yy.homi.common.constant.RedisConstants;
-import com.yy.homi.common.constant.SecurityConstants;
-import com.yy.homi.common.constant.ThirdPartyConstants;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.yy.homi.common.constant.*;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.SysUserCache;
 import com.yy.homi.common.enums.EncryptorEnum;
@@ -22,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -35,6 +32,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -73,7 +71,8 @@ public class WechatLoginStrategy implements UserLoginStrategy {
         String code = req.getCode();
         String sceneId = req.getSceneId();
         if (StrUtil.isBlank(code) || StrUtil.isBlank(sceneId)) {
-            throw new ServiceException("微信回调成功，但是code或sceneId为空！");
+            log.error("微信回调成功，但是code或sceneId为空！");
+            return R.fail("");
         }
 
         //1.根据code请求微信获取access_token
@@ -81,17 +80,19 @@ public class WechatLoginStrategy implements UserLoginStrategy {
         String responseStr = restTemplate.getForObject(getUrl, String.class);
         JSONObject jsonObject = JSON.parseObject(responseStr);
         if (jsonObject == null) {
-            throw new ServiceException("请求access_token 返回值为null!");
+            log.error("请求access_token 返回值为null!");
+            return R.fail("");
         }
         String token = jsonObject.getString("access_token");
         String openId = jsonObject.getString("openid");
         if (StrUtil.isBlank(token) || StrUtil.isBlank(openId)) {
-            throw new ServiceException("微信回调成功，请求token或openid为空");
+            log.error("微信回调成功，请求token或openid为空");
+            return R.fail("");
         }
 
-        //openid == userName在我们系统中
-        SysUser sysUser = sysUserMapper.selectByUserNameNeId(openId, "");
-        if(sysUser == null){
+        //根据unionId查询用户
+        SysUser sysUser = sysUserMapper.selectOne(new LambdaUpdateWrapper<SysUser>().eq(SysUser::getOpenId, openId));
+        if (sysUser == null) {
             //用户不存在就创建一个,密码默认为123456
             //根据openid和token获取用户信息
             String getUserInfoUrl = String.format(ThirdPartyConstants.WECHAT_GET_USERINFO_URL, token, openId); //https://api.weixin.qq.com/sns/userinfo?access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN
@@ -103,23 +104,26 @@ public class WechatLoginStrategy implements UserLoginStrategy {
 
             //解析数据
             String nickName = userInfoJson.getString("nickname");
-            Integer sex = userInfoJson.getInteger("sex") == null  ? 2 : userInfoJson.getInteger("sex");
+            Integer sex = userInfoJson.getInteger("sex") == null ? RbacConstants.SEX_UNKNOWN : userInfoJson.getInteger("sex");
             String avatar = userInfoJson.getString("headimgurl") == null ? "" : userInfoJson.getString("headimgurl");
-            SysUser saveSysUser = new SysUser();
-            saveSysUser.setUserName(openId);
-            saveSysUser.setNickName(nickName);
-            saveSysUser.setSex(sex);
-            saveSysUser.setAvatar(avatar);
-            saveSysUser.setPassword(EncryptorEnum.BCRYPT.encrypt("123456"));
-            int rows = sysUserMapper.insert(saveSysUser);
-            if(rows <= 0){
-                throw new ServiceException("微信第一次登录 插入用户信息失败！");
+            sysUser = new SysUser();
+            sysUser.setUserName(generateUsername());
+            sysUser.setNickName(nickName);
+            sysUser.setSex(sex);
+            sysUser.setAvatar(avatar);
+            sysUser.setOpenId(openId);
+            sysUser.setPassword(EncryptorEnum.BCRYPT.encrypt(RbacConstants.DEFAULT_PASSWORD));
+            try {
+                sysUserMapper.insert(sysUser);
+            } catch (DuplicateFormatFlagsException e) {
+                log.error("用户名已存在!",e);
+                return R.fail("用户名已存在,请重试~");
             }
         }
 
 
         // 2. 跳过密码校验
-        UserDetails userDetails = userDetailsService.loadUserByUsername(openId);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(sysUser.getUserName());
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());  //这里填入第三个参数时，authentication默认就是已认证,就不用在执行3的密码验证了
         // 3. 执行认证：管理器会调用 UserDetailsService 查数据库，并用 PasswordEncoder 比对密码
@@ -151,14 +155,31 @@ public class WechatLoginStrategy implements UserLoginStrategy {
         Set<String> permissions = new HashSet<>(permissonList);  //查询用户的 角色和权限标识["ROLE_admin","system:user:add",...]
         sysUserCache.setPermissions(permissions);
         String userCacheKey = RedisConstants.RBAC.USER_CACHE_PREFIX + userId;
-        redisTemplate.opsForValue().set(userCacheKey,sysUserCache,RedisConstants.RBAC.USER_CACHE_EXPIRE, TimeUnit.HOURS);  //homi:rbac:cache:user:${userId}
+        redisTemplate.opsForValue().set(userCacheKey, sysUserCache, RedisConstants.RBAC.USER_CACHE_EXPIRE, TimeUnit.HOURS);  //homi:rbac:cache:user:${userId}
 
         // 10. 封装响应数据,
         Map<String, Object> result = new HashMap<>();
         result.put("access_token", accessToken.getValue()); // JWT 字符串
         result.put("expires_in", accessToken.getExpiresIn()); // 有效期 秒
         result.put("user_id", userId); // 用户id
-        LoginWebSocketServer.sendMessage(sceneId,R.ok(result));  //写出webSocket
+        LoginWebSocketServer.sendMessage(sceneId, R.ok(result));  //写出webSocket
         return R.ok(result);
+    }
+
+    /**
+     * 生成规则：前缀 + 毫秒级时间戳(36进制) + 2位随机数
+     * 示例输出：homi_m2k8s9f2
+     */
+    public static String generateUsername() {
+        // 1. 获取当前时间戳（毫秒）
+        long timestamp = System.currentTimeMillis();
+
+        // 2. 转为36进制（包含0-9, a-z），能有效缩短字符串长度
+        String timeStr = Long.toString(timestamp, 36);
+
+        // 3. 补上2位随机字符，防止极高并发下同一毫秒碰撞
+        int randomNum = ThreadLocalRandom.current().nextInt(10, 99);
+
+        return RbacConstants.DEFAULT_USERNAME_PREFIX + timeStr + randomNum;
     }
 }
