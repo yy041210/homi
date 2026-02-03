@@ -13,5 +13,7 @@ public class MenuTreeVO {
     private String menuType;
     private String icon;
     private Integer orderNum;
+    private String path;
+    private String component;
     private List<MenuTreeVO> children = new ArrayList<>(); // 子节点存放处
 }

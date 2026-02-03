@@ -33,10 +33,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -86,8 +83,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         String phonenumber = request.getPhonenumber();
         String email = request.getEmail();
         Integer status = request.getStatus();
-        Long beginTime = request.getBeginTime();
-        Long endTime = request.getEndTime();
+        Date beginTime = request.getBeginTime();
+        Date endTime = request.getEndTime();
 
         //1.设置分页参数
         PageHelper.startPage(pageNum, pageSize);

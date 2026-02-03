@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -15,6 +16,7 @@ import com.yy.homi.rbac.domain.dto.request.RoleUpdateReqDTO;
 import com.yy.homi.rbac.domain.entity.SysMenu;
 import com.yy.homi.rbac.domain.entity.SysRole;
 import com.yy.homi.rbac.domain.vo.RoleInfoVO;
+import com.yy.homi.rbac.domain.vo.RoleOptionVO;
 import com.yy.homi.rbac.mapper.SysMenuMapper;
 import com.yy.homi.rbac.mapper.SysRoleMapper;
 import com.yy.homi.rbac.mapper.SysRoleMenuMapper;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -206,5 +209,14 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
         // 3. 执行插入
         sysRoleMenuMapper.addRoleMenu(roleId, menuId);
         return R.ok("插入成功！");
+    }
+
+    @Override
+    public R listAll() {
+        List<SysRole> sysRoleList = this.lambdaQuery()
+                .select(SysRole::getId, SysRole::getRoleName, SysRole::getStatus)
+                .list();
+        List<RoleOptionVO> roleOptionVOList = sysRoleConvert.toRoleOptionVOList(sysRoleList);
+        return R.ok(roleOptionVOList);
     }
 }

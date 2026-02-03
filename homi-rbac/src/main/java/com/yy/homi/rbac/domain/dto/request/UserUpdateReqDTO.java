@@ -36,6 +36,9 @@ public class UserUpdateReqDTO {
     @Schema(description = "状态 (0正常 1停用)", example = "0")
     private Integer status;
 
+    @Schema(description = "角色头像")
+    private String avatar;
+
     @Schema(description = "备注")
     private String remark;
 

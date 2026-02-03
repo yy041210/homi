@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -22,7 +23,7 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
      */
     SysUser selectByUserNameNeId(@Param("userName") String userName,@Param("userId") String userId);
 
-    List<SysUser> selectUserList(@Param("userName") String userName,@Param("phonenumber") String phonenumber,@Param("email") String email, @Param("status") Integer status, @Param("beginTime") Long beginTime,@Param("endTime") Long endTime);
+    List<SysUser> selectUserList(@Param("userName") String userName,@Param("phonenumber") String phonenumber,@Param("email") String email, @Param("status") Integer status, @Param("beginTime") Date beginTime,@Param("endTime") Date endTime);
 
     List<String> selectUserPermissionsById(@Param("userId") String userId);
 

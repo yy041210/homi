@@ -3,6 +3,8 @@ package com.yy.homi.rbac.domain.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.Date;
+
 @Data
 @Schema(description = "用户分页查询对象")
 public class UserPageListResDTO {
@@ -25,8 +27,8 @@ public class UserPageListResDTO {
     private Integer status;
 
     @Schema(description = "搜索：开始时间戳", example = "1706400000000")
-    private Long beginTime;
+    private Date beginTime;
 
     @Schema(description = "搜索：结束时间戳", example = "1706486400000")
-    private Long endTime;
+    private Date endTime;
 }

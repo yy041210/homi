@@ -25,6 +25,13 @@ public class SysRoleController {
     @Autowired
     private SysRoleService sysRoleService;
 
+    //查询所有角色
+    @Operation(summary = "查询所有角色id，name和status")
+    @GetMapping("/listAll")
+    public R listAll(){
+        return sysRoleService.listAll();
+    }
+
     //分页查询用户列表
     @Operation(summary = "分页查询角色列表")
     @GetMapping("/pageList")

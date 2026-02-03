@@ -34,7 +34,7 @@ spring:
         health-check-path: ${server.servlet.context-path}${management.server.base-path}/${management.endpoints.web.exposure.include}
         health-check-interval: 10s
   datasource:
-    url: jdbc:mysql://localhost:3306/homi_file?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8
+    url: jdbc:mysql://localhost:3306/homi_file?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
     username: root
     password: 1234
   redis:
