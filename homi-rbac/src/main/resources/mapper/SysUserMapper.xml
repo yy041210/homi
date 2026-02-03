@@ -3,24 +3,28 @@
 <mapper namespace="com.yy.homi.rbac.mapper.SysUserMapper">
 
     <resultMap type="SysUser" id="SysUserResult">
-        <id     property="id"           column="id"            />
-        <result property="userName"     column="user_name"     />
-        <result property="nickName"     column="nick_name"     />
-        <result property="password"     column="password"      />
-        <result property="status"       column="status"        />
-        <result property="email"        column="email"         />
-        <result property="phonenumber"  column="phonenumber"   />
-        <result property="sex"          column="sex"           />
-        <result property="avatar"       column="avatar"        />
-        <result property="createBy"     column="create_by"     />
-        <result property="createTime"   column="create_time"   />
-        <result property="updateBy"     column="update_by"     />
-        <result property="updateTime"   column="update_time"   />
-        <result property="remark"       column="remark"        />
+        <id property="id" column="id"/>
+        <result property="userName" column="user_name"/>
+        <result property="nickName" column="nick_name"/>
+        <result property="password" column="password"/>
+        <result property="status" column="status"/>
+        <result property="email" column="email"/>
+        <result property="phonenumber" column="phonenumber"/>
+        <result property="sex" column="sex"/>
+        <result property="avatar" column="avatar"/>
+        <result property="unionId" column="unionId"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
     </resultMap>
 
     <select id="selectByUserNameNeId" parameterType="String" resultMap="SysUserResult">
-        select * from sys_user where user_name = #{userName} and id != #{userId}
+        select *
+        from sys_user
+        where user_name = #{userName}
+          and id != #{userId}
     </select>
 
     <select id="selectUserList" resultMap="SysUserResult">
@@ -54,16 +58,21 @@
         SELECT r.role_key
         FROM sys_role r
                  LEFT JOIN sys_user_role ur ON r.id = ur.role_id
-        WHERE ur.user_id = #{userId} AND r.status = 0 AND r.del_flag = 0
+        WHERE ur.user_id = #{userId}
+          AND r.status = 0
+          AND r.del_flag = 0
 
-        UNION -- 合并结果集并去重
+        UNION
+        -- 合并结果集并去重
 
         -- 2. 再查具体权限标识 (perms)
         SELECT m.perms
         FROM sys_menu m
                  LEFT JOIN sys_role_menu rm ON m.id = rm.menu_id
                  LEFT JOIN sys_user_role ur ON rm.role_id = ur.role_id
-        WHERE ur.user_id = #{userId} AND m.perms IS NOT NULL AND m.perms != ''
+        WHERE ur.user_id = #{userId}
+          AND m.perms IS NOT NULL
+          AND m.perms != ''
     </select>
 
 
