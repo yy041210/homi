@@ -158,8 +158,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     @Override
     public R getMenuTree() {
         //1.查询所有次啊但按照orderNum升序状态正常
-        List<SysMenu> sysMenuList = sysMenuMapper.
-                selectAllMenus();
+        List<SysMenu> sysMenuList = sysMenuMapper.selectList(null);
         if (CollectionUtil.isEmpty(sysMenuList)) {
             return R.ok(new ArrayList<>());
         }

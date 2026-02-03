@@ -70,7 +70,7 @@ public class SysMenuController {
     }
 
     //获取菜单树形结构
-    @Operation(summary = "获取菜单权限树形结构", description = "返回层级结构的菜单，用于前端展示")
+    @Operation(summary = "获取所有菜单权限树形结构", description = "返回层级结构的菜单，用于前端展示")
     @GetMapping("/getMenuTree")
     public R getMenuTree(){
         return sysMenuService.getMenuTree();
