@@ -38,6 +38,12 @@
         where id = #{menuId}
     </update>
 
+    <update id="updateVisibleById">
+        update sys_menu
+        set visible = #{visible}
+        where id = #{menuId}
+    </update>
+
     <select id="selectMenuList" resultType="com.yy.homi.rbac.domain.entity.SysMenu">
         select * from sys_menu
         <where>
@@ -77,13 +83,13 @@
         where status = 0
     </select>
 
-    <select id="selectMenusByUserId" resultType="com.yy.homi.rbac.domain.entity.SysMenu">
+    <select id="selectVisibleMenusByUserId" resultType="com.yy.homi.rbac.domain.entity.SysMenu">
         select * from sys_menu m
         left join sys_role_menu rm on m.id = rm.menu_id
         left join sys_user_role ur on rm.role_id = ur.role_id
         left join sys_role r on r.id = rm.role_id
         where ur.user_id = #{userId}
-        and m.status = 0
+        and m.visible = 0
         and m.menu_type in ('M','C')
         and r.status = 0
     </select>

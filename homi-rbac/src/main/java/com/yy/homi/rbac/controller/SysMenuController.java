@@ -56,9 +56,17 @@ public class SysMenuController {
     }
 
     //启用停用
+    @Operation(summary = "启用或停用菜单", description = "启用或停用菜单")
     @GetMapping("/changeStatus")
     public R changeStatus(@RequestParam("id") @NotBlank(message = "菜单id不能为空!") String id){
         return sysMenuService.changeStatus(id);
+    }
+
+    //隐藏显示
+    @Operation(summary = "显示或隐藏菜单", description = "显示或隐藏菜单")
+    @GetMapping("/changeVisible")
+    public R changeVisible(@RequestParam("id") @NotBlank(message = "菜单id不能为空!") String id){
+        return sysMenuService.changeVisible(id);
     }
 
     //获取菜单树形结构
@@ -68,7 +76,7 @@ public class SysMenuController {
         return sysMenuService.getMenuTree();
     }
 
-    //根据用户id获取菜单树形结构
+    //根据用户id获取可见菜单树形结构
     @Operation(summary = "根据用户id获取菜单权限树形结构", description = "返回层级结构的菜单，用于前端展示")
     @GetMapping("/getMenuTreeByUserId")
     public R getMenuTreeByUserId(@RequestParam("userId") @NotBlank(message = "用户id不能为空！") String userId){

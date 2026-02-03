@@ -22,4 +22,6 @@ public interface SysMenuService extends IService<SysMenu> {
     R getMenuTree();
 
     R getMenuTreeByUserId(String userId);
+
+    R changeVisible(String id);
 }

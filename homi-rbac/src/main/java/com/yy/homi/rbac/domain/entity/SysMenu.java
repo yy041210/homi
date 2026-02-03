@@ -38,7 +38,7 @@ public class SysMenu implements Serializable {
     private String menuType;
 
     /** 菜单状态（0显示 1隐藏） */
-    private String visible;
+    private Integer visible;
 
     /** 菜单状态（0正常 1停用） */
     private Integer status;

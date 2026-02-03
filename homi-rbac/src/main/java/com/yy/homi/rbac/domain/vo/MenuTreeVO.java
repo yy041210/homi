@@ -15,5 +15,7 @@ public class MenuTreeVO {
     private Integer orderNum;
     private String path;
     private String component;
+    private Integer visible;
+    private Integer status;
     private List<MenuTreeVO> children = new ArrayList<>(); // 子节点存放处
 }

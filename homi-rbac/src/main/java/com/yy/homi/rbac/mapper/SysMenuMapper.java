@@ -29,9 +29,10 @@ public interface SysMenuMapper extends BaseMapper<SysMenu> {
 
     int hasChildByMenuId(@Param("menuId") String menuId);
 
-    void updateStatusById(@Param("menuId") String menuId,@Param("status") int status);
+    int updateStatusById(@Param("menuId") String menuId,@Param("status") int status);
+    int updateVisibleById(@Param("menuId") String menuId,@Param("visible") int visible);
 
     List<SysMenu> selectAllMenus();
 
-    List<SysMenu> selectMenusByUserId(@Param("userId") String userId);
+    List<SysMenu> selectVisibleMenusByUserId(@Param("userId") String userId);
 }

@@ -19,7 +19,6 @@ import com.yy.homi.rbac.mapper.SysRoleMenuMapper;
 import com.yy.homi.rbac.mapper.SysUserMapper;
 import com.yy.homi.rbac.service.SysMenuService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -150,7 +149,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
                 : CommonConstants.STATUS_ENABLED;
 
         // 3. 如果是停用操作，需要递归停用所有下级（可选，根据业务需求）
-        sysMenuMapper.updateStatusById(id,newStatus);
+        sysMenuMapper.updateStatusById(id, newStatus);
 
         return R.ok("更改状态成功");
 
@@ -161,7 +160,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         //1.查询所有次啊但按照orderNum升序状态正常
         List<SysMenu> sysMenuList = sysMenuMapper.
                 selectAllMenus();
-        if(CollectionUtil.isEmpty(sysMenuList)){
+        if (CollectionUtil.isEmpty(sysMenuList)) {
             return R.ok(new ArrayList<>());
         }
 
@@ -177,18 +176,18 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     @Override
     public R getMenuTreeByUserId(String userId) {
-        if(StrUtil.isBlank(userId)){
+        if (StrUtil.isBlank(userId)) {
             return R.fail("用户id不能为空！");
         }
         //判断用户是否存在
         SysUser sysUserDB = sysUserMapper.selectById(userId);
-        if(sysUserDB == null){
+        if (sysUserDB == null) {
             return R.fail("用户不存在！");
         } else if (sysUserDB.getStatus() == CommonConstants.STATUS_DISABLED) {
             return R.fail("用户已被禁用！");
         }
-        // 1. 查询该用户关联的所有菜单（注意：SQL中要根据用户->角色->菜单关联，并过滤状态为0的）
-        List<SysMenu> menus = sysMenuMapper.selectMenusByUserId(userId);
+        // 1. 查询该用户关联的所有非隐藏菜单（注意：SQL中要根据用户->角色->菜单）
+        List<SysMenu> menus = sysMenuMapper.selectVisibleMenusByUserId(userId);
         List<MenuTreeVO> menuTreeVOList = sysMenuConvert.toMenuTreeVOList(menus);
         Map<String, List<MenuTreeVO>> nodeMap = menuTreeVOList.stream().collect(Collectors.groupingBy(MenuTreeVO::getParentId));
         List<MenuTreeVO> menuTreeVOS = buildMenuTreeRecursive(RbacConstants.TOP_NODE_ID, nodeMap);
@@ -196,15 +195,32 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         return R.ok(menuTreeVOS);
     }
 
+    @Override
+    public R changeVisible(String id) {
+        // 1. 先查询当前数据
+        SysMenu menu = sysMenuMapper.selectById(id);
+        if (menu == null) {
+            return R.fail("菜单不存在");
+        }
+
+        // 2. 状态取反 (假设 0正常 1停用)
+        Integer newVisibleStatus = menu.getVisible() == RbacConstants.MENU_VISIBLE ? RbacConstants.MENU_HIDDEN : RbacConstants.MENU_VISIBLE;
+
+        // 3. 如果是停用操作，需要递归停用所有下级（可选，根据业务需求）
+        sysMenuMapper.updateStatusById(id, newVisibleStatus);
+
+        return R.ok("更改状态成功");
+    }
+
     //获取当前节点的子节点 （递归方法）
-    private List<MenuTreeVO> buildMenuTreeRecursive(String parentId,Map<String, List<MenuTreeVO>> nodeMap){
+    private List<MenuTreeVO> buildMenuTreeRecursive(String parentId, Map<String, List<MenuTreeVO>> nodeMap) {
         //1.从map中获取当前id的所有子节点
         List<MenuTreeVO> children = nodeMap.get(parentId);
-        if(CollectionUtil.isEmpty(children)){
+        if (CollectionUtil.isEmpty(children)) {
             return new ArrayList<>();
         }
         //2.不是空就排序
-        children.sort(Comparator.comparing(MenuTreeVO::getOrderNum,Comparator.nullsLast(Integer::compareTo)));
+        children.sort(Comparator.comparing(MenuTreeVO::getOrderNum, Comparator.nullsLast(Integer::compareTo)));
 
         //3.递归查询当前节点的子节点
         for (MenuTreeVO child : children) {
