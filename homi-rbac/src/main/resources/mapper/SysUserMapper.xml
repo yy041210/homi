@@ -37,7 +37,7 @@
                 AND phonenumber LIKE CONCAT('%', #{phonenumber}, '%')
             </if>
             <if test="email != null and email != ''">
-                AND phonenumber LIKE CONCAT('%', #{email}, '%')
+                AND email LIKE CONCAT('%', #{email}, '%')
             </if>
             <if test="status != null">
                 AND status = #{status}
