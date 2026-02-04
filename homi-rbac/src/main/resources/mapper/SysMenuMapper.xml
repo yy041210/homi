@@ -29,7 +29,7 @@
             <if test="visible != null">visible = #{visible},</if>
             <if test="status != null">status = #{status},</if>
         </set>
-        WHERE menu_id = #{menuId}
+        WHERE id = #{id}
     </update>
 
     <update id="updateStatusById">

@@ -41,5 +41,7 @@ public class SysUserVO implements Serializable {
     /** 备注 */
     private String remark;
 
+    private List<String> roleIds;
+
 
 }

@@ -19,6 +19,7 @@ import com.yy.homi.rbac.domain.dto.request.UserPageListResDTO;
 import com.yy.homi.rbac.domain.entity.SysUserDetails;
 import com.yy.homi.rbac.domain.entity.SysUserRole;
 import com.yy.homi.common.enums.EncryptorEnum;
+import com.yy.homi.rbac.domain.vo.SysUserVO;
 import com.yy.homi.rbac.mapper.SysRoleMapper;
 import com.yy.homi.rbac.mapper.SysUserMapper;
 import com.yy.homi.rbac.mapper.SysUserRoleMapper;
@@ -90,7 +91,28 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         PageHelper.startPage(pageNum, pageSize);
 
         List<SysUser> sysUserList = sysUserMapper.selectUserList(userName, phonenumber, email, status, beginTime, endTime);
-        return R.ok(new PageInfo<>(sysUserConvert.toVoList(sysUserList)));
+        List<SysUserVO> voList = sysUserConvert.toVoList(sysUserList);
+
+        List<String> userIds = voList.stream().map(SysUserVO::getId).collect(Collectors.toList());
+        List<SysUserRole> sysUserRoles = sysUserRoleMapper.selectByUserIds(userIds);
+        if(CollectionUtil.isEmpty(sysUserRoles)){
+            voList.stream().forEach(vo -> vo.setRoleIds(Collections.emptyList()));
+            return R.ok(new PageInfo<>(voList));
+        }
+        
+        //根据userId分组
+        Map<String,List<String>> userRoleIdsMapByUserId = sysUserRoles.stream()
+                .collect(Collectors.groupingBy(
+                        SysUserRole::getUserId,
+                        Collectors.mapping(SysUserRole::getRoleId,  // 提取角色ID
+                                Collectors.toList())
+                ));
+
+        voList.stream().forEach(vo -> {
+            vo.setRoleIds( userRoleIdsMapByUserId.get(vo.getId()) == null ? Collections.emptyList() : userRoleIdsMapByUserId.get(vo.getId()) );
+        });
+
+        return R.ok(new PageInfo<>(voList));
     }
 
     @Override

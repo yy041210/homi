@@ -32,8 +32,8 @@ public class SysUserController {
         return sysUserService.pageList(userPageListResDTO);
     }
 
-    //根据id获取角色信息
-    @Operation(summary = "获取用户详细信息")
+    //根据id获取信息
+    @Operation(summary = "获取用户信息")
     @Parameter(name = "id", description = "用户ID", required = true)
     @GetMapping("/getUserInfo")
     public R getUserInfo(@RequestParam("id") @NotBlank(message = "用户id不能为空") String id) {

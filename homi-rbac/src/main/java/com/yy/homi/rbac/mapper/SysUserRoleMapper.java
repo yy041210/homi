@@ -1,12 +1,14 @@
 package com.yy.homi.rbac.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.yy.homi.rbac.domain.entity.SysRole;
 import com.yy.homi.rbac.domain.entity.SysUserRole;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Collection;
 import java.util.List;
 
 
@@ -22,4 +24,6 @@ public interface SysUserRoleMapper extends BaseMapper<SysUserRole> {
     int deleteByUserIds(@Param("userIds") List<String> userIds);
 
     int countByRelation(@Param("userId") String userId, @Param("roleId") String roleId);
+
+    List<SysUserRole> selectByUserIds(@Param("userIds") Collection<String> userIds);
 }

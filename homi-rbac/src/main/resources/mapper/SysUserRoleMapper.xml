@@ -11,6 +11,16 @@
     </delete>
 
     <select id="countByRelation" resultType="java.lang.Integer">
-        select count(1) from sys_user_role where user_id = #{userId} and role_id =#{roleId}
+        select count(1)
+        from sys_user_role
+        where user_id = #{userId}
+          and role_id = #{roleId}
+    </select>
+
+    <select id="selectByUserIds" resultType="com.yy.homi.rbac.domain.entity.SysUserRole">
+        select * from sys_user_role where user_id in
+        <foreach collection="userIds" item="userId" separator="," open="(" close=")">
+            #{userId}
+        </foreach>
     </select>
 </mapper>
