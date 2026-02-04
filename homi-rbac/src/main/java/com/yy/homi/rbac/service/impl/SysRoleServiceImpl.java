@@ -10,11 +10,13 @@ import com.yy.homi.common.constant.CommonConstants;
 import com.yy.homi.common.constant.RbacConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.convert.SysRoleConvert;
+import com.yy.homi.rbac.domain.dto.request.AddRoleMenusReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RolePageListReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleUpdateReqDTO;
 import com.yy.homi.rbac.domain.entity.SysMenu;
 import com.yy.homi.rbac.domain.entity.SysRole;
+import com.yy.homi.rbac.domain.entity.SysRoleMenu;
 import com.yy.homi.rbac.domain.vo.RoleInfoVO;
 import com.yy.homi.rbac.domain.vo.RoleOptionVO;
 import com.yy.homi.rbac.mapper.SysMenuMapper;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> implements SysRoleService {
@@ -189,25 +192,27 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     }
 
     @Override
-    public R addRoleMenuRelation(String roleId, String menuId) {
+    public R addRoleMenuRelation(AddRoleMenusReqDTO req) {
+        String roleId = req.getRoleId();
+        List<String> menuIds = req.getMenuIds();
+        if(StrUtil.isBlank(roleId) || CollectionUtil.isEmpty(menuIds)){
+            return  R.fail("roleId和menuIds不能为空！");
+        }
         // 1. 业务校验：检查角色和菜单是否真实存在（防止脏数据）
         SysRole sysRole = sysRoleMapper.selectById(roleId);
         if(sysRole == null){
             return R.fail("用户不存在！");
         }
-        SysMenu sysMenu = sysMenuMapper.selectById(menuId);
-        if(sysMenu == null){
-            return R.fail("菜单不存在");
+
+        menuIds = menuIds.stream().distinct().collect(Collectors.toList());
+        List<SysMenu> sysMenuList = sysMenuMapper.selectBatchIds(menuIds);
+        if(sysMenuList.size() != menuIds.size()){
+            return R.fail("存在 未知的菜单id");
         }
 
-        // 2. 检查是否已经存在该关联
-        int count = sysRoleMenuMapper.countByRoleIdAndMenuId(roleId, menuId);
-        if (count > 0) {
-            return R.fail("该角色已拥有该菜单权限，请勿重复添加");
-        }
-
-        // 3. 执行插入
-        sysRoleMenuMapper.addRoleMenu(roleId, menuId);
+        // 2. 先删除再插入
+        sysRoleMenuMapper.deleteByRoleId(roleId);
+        sysRoleMenuMapper.insertBatch(roleId,menuIds);
         return R.ok("插入成功！");
     }
 

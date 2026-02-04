@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -12,8 +13,11 @@ import com.yy.homi.rbac.domain.convert.SysMenuConvert;
 import com.yy.homi.rbac.domain.dto.request.MenuSaveReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuPageListReqDTO;
 import com.yy.homi.rbac.domain.entity.SysMenu;
+import com.yy.homi.rbac.domain.entity.SysRole;
 import com.yy.homi.rbac.domain.entity.SysUser;
+import com.yy.homi.rbac.domain.vo.MenuOptionVO;
 import com.yy.homi.rbac.domain.vo.MenuTreeVO;
+import com.yy.homi.rbac.domain.vo.RoleOptionVO;
 import com.yy.homi.rbac.mapper.SysMenuMapper;
 import com.yy.homi.rbac.mapper.SysRoleMenuMapper;
 import com.yy.homi.rbac.mapper.SysUserMapper;
@@ -209,6 +213,13 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         sysMenuMapper.updateStatusById(id, newVisibleStatus);
 
         return R.ok("更改状态成功");
+    }
+
+    @Override
+    public R listAll() {
+        List<SysMenu> sysMenuList = sysMenuMapper.selectList(null);
+        List<MenuOptionVO> menuOptionVOList = sysMenuConvert.toMenuOptionVOList(sysMenuList);
+        return R.ok(menuOptionVOList);
     }
 
     //获取当前节点的子节点 （递归方法）

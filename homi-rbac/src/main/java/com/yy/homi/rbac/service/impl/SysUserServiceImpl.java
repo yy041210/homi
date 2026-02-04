@@ -11,6 +11,7 @@ import com.yy.homi.common.constant.RedisConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.SysUserCache;
 import com.yy.homi.rbac.domain.convert.SysUserConvert;
+import com.yy.homi.rbac.domain.dto.request.AddRoleMenusReqDTO;
 import com.yy.homi.rbac.domain.dto.request.UserInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.UserUpdateReqDTO;
 import com.yy.homi.rbac.domain.entity.SysRole;

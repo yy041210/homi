@@ -27,6 +27,13 @@ public class SysMenuController {
         return sysMenuService.pageList(menuPageListReqDTO);
     }
 
+    //查询所有菜单(id,visible,status,name,menuType)
+    @Operation(summary = "查询所有角色id，name和status")
+    @GetMapping("/listAll")
+    public R listAll(){
+        return sysMenuService.listAll();
+    }
+
     //根据id获取菜单信息
     @Operation(summary = "根据id查询菜单权限信息")
     @GetMapping("/getMenuInfo")

@@ -1,6 +1,7 @@
 package com.yy.homi.rbac.controller;
 
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.rbac.domain.dto.request.AddRoleMenusReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RolePageListReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleUpdateReqDTO;
@@ -25,7 +26,7 @@ public class SysRoleController {
     @Autowired
     private SysRoleService sysRoleService;
 
-    //查询所有角色
+    //查询所有角色(id,status,name)
     @Operation(summary = "查询所有角色id，name和status")
     @GetMapping("/listAll")
     public R listAll(){
@@ -34,7 +35,7 @@ public class SysRoleController {
 
     //分页查询用户列表
     @Operation(summary = "分页查询角色列表")
-    @GetMapping("/pageList")
+    @PostMapping("/pageList")
     public R pageList(RolePageListReqDTO rolePageListReqDTO){
         return sysRoleService.pageList(rolePageListReqDTO);
     }
@@ -80,10 +81,9 @@ public class SysRoleController {
             @Parameter(name = "roleId", description = "角色ID", required = true),
             @Parameter(name = "menuId", description = "菜单ID", required = true)
     })
-    @GetMapping("/addRoleMenuRelation")
-    public R addRoleMenuRelation(@RequestParam("roleId") @NotBlank(message = "角色id不能为空") String roleId,
-                        @RequestParam("menuId")  @NotBlank(message = "菜单id不能为空") String menuId){
-        return sysRoleService.addRoleMenuRelation(roleId,menuId);
+    @PostMapping("/addRoleMenuRelation")
+    public R addRoleMenuRelation(@Validated @RequestBody AddRoleMenusReqDTO addRoleMenusReqDTO){
+        return sysRoleService.addRoleMenuRelation(addRoleMenusReqDTO);
     }
 
 

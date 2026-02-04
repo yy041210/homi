@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.rbac.domain.dto.request.AddRoleMenusReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RolePageListReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleUpdateReqDTO;
@@ -20,7 +21,7 @@ public interface SysRoleService extends IService<SysRole> {
 
     R changeStatus(String roleId);
 
-    R addRoleMenuRelation(String roleId, String menuId);
+    R addRoleMenuRelation(AddRoleMenusReqDTO addRoleMenusReqDTO);
 
     R listAll();
 }
