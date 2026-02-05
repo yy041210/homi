@@ -10,6 +10,7 @@ import com.yy.homi.common.constant.CommonConstants;
 import com.yy.homi.common.constant.RbacConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.convert.SysMenuConvert;
+import com.yy.homi.rbac.domain.dto.request.ConditionGetMenuTreeReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuSaveReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuPageListReqDTO;
 import com.yy.homi.rbac.domain.entity.SysMenu;
@@ -26,10 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -169,9 +167,15 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     }
 
     @Override
-    public R getMenuTree() {
+    public R getMenuTree(ConditionGetMenuTreeReqDTO req) {
         //1.查询所有次啊但按照orderNum升序状态正常
-        List<SysMenu> sysMenuList = sysMenuMapper.selectList(null);
+        String menuName = req.getMenuName();
+        String menuType = req.getMenuType();
+        Integer visible = req.getVisible();
+        Integer status = req.getStatus();
+        Date beginTime = req.getBeginTime();
+        Date endTime = req.getEndTime();
+        List<SysMenu> sysMenuList = sysMenuMapper.selectList(menuName,menuType,visible,status,beginTime,endTime);
         if (CollectionUtil.isEmpty(sysMenuList)) {
             return R.ok(new ArrayList<>());
         }

@@ -36,7 +36,7 @@ public class SysRoleController {
     //分页查询用户列表
     @Operation(summary = "分页查询角色列表")
     @PostMapping("/pageList")
-    public R pageList(RolePageListReqDTO rolePageListReqDTO){
+    public R pageList(@RequestBody RolePageListReqDTO rolePageListReqDTO){
         return sysRoleService.pageList(rolePageListReqDTO);
     }
 

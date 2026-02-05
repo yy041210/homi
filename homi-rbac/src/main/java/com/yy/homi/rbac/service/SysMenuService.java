@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.rbac.domain.dto.request.ConditionGetMenuTreeReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuSaveReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuPageListReqDTO;
 import com.yy.homi.rbac.domain.entity.SysMenu;
@@ -19,7 +20,7 @@ public interface SysMenuService extends IService<SysMenu> {
 
     R changeStatus(String id);
 
-    R getMenuTree();
+    R getMenuTree(ConditionGetMenuTreeReqDTO conditionGetMenuTreeReqDTO);
 
     R getMenuTreeByUserId(String userId);
 

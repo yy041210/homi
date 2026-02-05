@@ -104,5 +104,32 @@
         select * from sys_menu where parent_id = #{parentId} and status = #{status}
     </select>
 
+    <select id="selectList" resultType="com.yy.homi.rbac.domain.entity.SysMenu">
+        SELECT id, menu_name, parent_id, order_num, path, component,
+        menu_type, visible, status, perms, icon,remark,create_time,update_time
+        FROM sys_menu
+        <where>
+            <if test="menuName != null and menuName != ''">
+                AND menu_name LIKE CONCAT('%', #{menuName}, '%')
+            </if>
+            <if test="menuType != null and menuType != ''">
+                AND menu_type = #{menuType}
+            </if>
+            <if test="visible != null">
+                AND visible = #{visible}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="beginTime != null">
+                AND create_time &gt;= #{beginTime}
+            </if>
+            <if test="endTime != null">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY parent_id, order_num
+    </select>
+
 
 </mapper>

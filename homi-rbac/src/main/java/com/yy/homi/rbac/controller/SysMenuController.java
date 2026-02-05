@@ -1,6 +1,7 @@
 package com.yy.homi.rbac.controller;
 
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.rbac.domain.dto.request.ConditionGetMenuTreeReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuSaveReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuPageListReqDTO;
 import com.yy.homi.rbac.service.SysMenuService;
@@ -77,10 +78,10 @@ public class SysMenuController {
     }
 
     //获取菜单树形结构
-    @Operation(summary = "获取所有菜单权限树形结构", description = "返回层级结构的菜单，用于前端展示")
-    @GetMapping("/getMenuTree")
-    public R getMenuTree(){
-        return sysMenuService.getMenuTree();
+    @Operation(summary = "条件查询获取菜单权限树形结构", description = "返回层级结构的菜单，用于前端展示")
+    @PostMapping("/getMenuTree")
+    public R getMenuTree(@RequestBody ConditionGetMenuTreeReqDTO conditionGetMenuTreeReqDTO){
+        return sysMenuService.getMenuTree(conditionGetMenuTreeReqDTO);
     }
 
     //根据用户id获取可见菜单树形结构

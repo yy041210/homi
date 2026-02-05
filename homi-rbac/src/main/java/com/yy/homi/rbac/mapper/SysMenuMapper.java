@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -37,4 +38,6 @@ public interface SysMenuMapper extends BaseMapper<SysMenu> {
     List<SysMenu> selectMenusByParentIdAndStatus(@Param("parentId") String parentId,@Param("status") int status);
 
     int updateStatusByIds(@Param("menuIds") List<String> menuIds,@Param("status") int status);
+
+    List<SysMenu> selectList(@Param("menuName") String menuName, @Param("menuType") String menuType, @Param("visible") Integer visible, @Param("status") Integer status, @Param("beginTime") Date beginTime,@Param("endTime") Date endTime);
 }
