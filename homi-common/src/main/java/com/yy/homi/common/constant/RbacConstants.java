@@ -5,7 +5,7 @@ public class RbacConstants {
      * 角色标识
      */
     public static final String ADMIN_ROLE_ID = "1";
-    public static final String ADMIN_ROLE_KEY = "ROLE_admin";
+    public static final String ADMIN_ROLE_KEY = "ROLE_ADMIN";
 
     /** * 菜单类型
      */

@@ -5,7 +5,6 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 @Data
 public class SysUserVO implements Serializable {
@@ -40,6 +39,13 @@ public class SysUserVO implements Serializable {
 
     /** 备注 */
     private String remark;
+
+    /** 创建时间 */
+    private Date createTime;
+
+    /** 更新时间 */
+    private Date updateTime;
+
 
     private List<String> roleIds;
 
