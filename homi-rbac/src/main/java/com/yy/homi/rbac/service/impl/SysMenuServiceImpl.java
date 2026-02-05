@@ -210,7 +210,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
         Integer newVisibleStatus = menu.getVisible() == RbacConstants.MENU_VISIBLE ? RbacConstants.MENU_HIDDEN : RbacConstants.MENU_VISIBLE;
 
         // 3. 如果是停用操作，需要递归停用所有下级（可选，根据业务需求）
-        sysMenuMapper.updateStatusById(id, newVisibleStatus);
+        sysMenuMapper.updateVisibleById(id, newVisibleStatus);
 
         return R.ok("更改状态成功");
     }
