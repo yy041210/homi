@@ -19,7 +19,7 @@
                 and role_name like concat('%',#{roleName},'%')
             </if>
             <if test="roleKey != null and roleKey != ''">
-                and role_key = like concat('%',#{roleKey},'%')
+                and role_key like concat('%',#{roleKey},'%')
             </if>
             <if test="status != null">
                 and status = #{status}
