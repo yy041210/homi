@@ -68,7 +68,4 @@ public class SysMenu implements Serializable {
     /** 备注 */
     private String remark;
 
-    /** 子菜单（业务逻辑字段） */
-    @TableField(exist = false)
-    private List<SysMenu> children = new ArrayList<>();
 }
