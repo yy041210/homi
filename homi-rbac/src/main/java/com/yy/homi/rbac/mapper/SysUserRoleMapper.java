@@ -26,4 +26,6 @@ public interface SysUserRoleMapper extends BaseMapper<SysUserRole> {
     int countByRelation(@Param("userId") String userId, @Param("roleId") String roleId);
 
     List<SysUserRole> selectByUserIds(@Param("userIds") Collection<String> userIds);
+
+    int insertBatch(@Param("userId") String userId, @Param("roleIds") List<String> roleIds);
 }

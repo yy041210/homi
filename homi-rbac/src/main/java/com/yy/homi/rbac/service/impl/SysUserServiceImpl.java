@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -11,12 +12,9 @@ import com.yy.homi.common.constant.RedisConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.SysUserCache;
 import com.yy.homi.rbac.domain.convert.SysUserConvert;
-import com.yy.homi.rbac.domain.dto.request.AddRoleMenusReqDTO;
-import com.yy.homi.rbac.domain.dto.request.UserInsertReqDTO;
-import com.yy.homi.rbac.domain.dto.request.UserUpdateReqDTO;
+import com.yy.homi.rbac.domain.dto.request.*;
 import com.yy.homi.rbac.domain.entity.SysRole;
 import com.yy.homi.rbac.domain.entity.SysUser;
-import com.yy.homi.rbac.domain.dto.request.UserPageListResDTO;
 import com.yy.homi.rbac.domain.entity.SysUserDetails;
 import com.yy.homi.rbac.domain.entity.SysUserRole;
 import com.yy.homi.common.enums.EncryptorEnum;
@@ -95,14 +93,16 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         List<SysUserVO> voList = sysUserConvert.toVoList(sysUserList);
 
         List<String> userIds = voList.stream().map(SysUserVO::getId).collect(Collectors.toList());
-        List<SysUserRole> sysUserRoles = sysUserRoleMapper.selectByUserIds(userIds);
-        if(CollectionUtil.isEmpty(sysUserRoles)){
+
+        if (CollectionUtil.isEmpty(userIds)) {
             voList.stream().forEach(vo -> vo.setRoleIds(Collections.emptyList()));
             return R.ok(new PageInfo<>(voList));
         }
-        
+        List<SysUserRole> sysUserRoles = sysUserRoleMapper.selectByUserIds(userIds);
+
+
         //根据userId分组
-        Map<String,List<String>> userRoleIdsMapByUserId = sysUserRoles.stream()
+        Map<String, List<String>> userRoleIdsMapByUserId = sysUserRoles.stream()
                 .collect(Collectors.groupingBy(
                         SysUserRole::getUserId,
                         Collectors.mapping(SysUserRole::getRoleId,  // 提取角色ID
@@ -110,7 +110,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 ));
 
         voList.stream().forEach(vo -> {
-            vo.setRoleIds( userRoleIdsMapByUserId.get(vo.getId()) == null ? Collections.emptyList() : userRoleIdsMapByUserId.get(vo.getId()) );
+            vo.setRoleIds(userRoleIdsMapByUserId.get(vo.getId()) == null ? Collections.emptyList() : userRoleIdsMapByUserId.get(vo.getId()));
         });
 
         return R.ok(new PageInfo<>(voList));
@@ -267,7 +267,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             return R.fail("用户id不能为空!");
         }
         //禁止禁用管理员
-        if(userId.equals(RbacConstants.ADMIN_ROLE_ID)){
+        if (userId.equals(RbacConstants.ADMIN_ROLE_ID)) {
             return R.fail("禁止禁用管理员！");
         }
         //1.查询用户是否存在
@@ -278,50 +278,74 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
         //2.切换状态
         int newStatus = sysUserDB.getStatus() == CommonConstants.STATUS_ENABLED ? CommonConstants.STATUS_DISABLED : CommonConstants.STATUS_ENABLED;
-        sysUserMapper.changeStatusById(userId,newStatus);
+        sysUserMapper.changeStatusById(userId, newStatus);
 
         //3.删除redis缓存
-        redisTemplate.delete(RedisConstants.RBAC.USER_CACHE_PREFIX+userId);
+        redisTemplate.delete(RedisConstants.RBAC.USER_CACHE_PREFIX + userId);
 
         return R.ok();
     }
 
     @Override
     @Transactional
-    public R addUserRoleRelation(String userId, String roleId) {
-        if(StrUtil.isBlank(userId) || StrUtil.isBlank(roleId)){
-            return R.fail("用户id或角色id不能为空！");
+    public R addUserRoleRelation(AddUserRolesReqDTO req) {
+        String userId = req.getUserId();
+        List<String> roleIds = req.getRoleIds();
+        if (StrUtil.isBlank(userId) || CollectionUtil.isEmpty(roleIds)) {
+            return R.fail("用户id或角色ids不能为空！");
         }
 
         //1.检查用户是否存在
         SysUser sysUserDB = sysUserMapper.selectById(userId);
-        if(sysUserDB == null){
+        if (sysUserDB == null) {
             return R.fail("用户不存在!");
-        }else if (sysUserDB.getStatus() == CommonConstants.STATUS_DISABLED){
+        } else if (sysUserDB.getStatus() == CommonConstants.STATUS_DISABLED) {
             return R.fail("用户已被禁用！");
         }
-        SysRole sysRoleDB = sysRoleMapper.selectById(roleId);
-        if(sysRoleDB == null){
-            return R.fail("角色不存在!");
-        }else if (sysRoleDB.getStatus() == CommonConstants.STATUS_DISABLED){
-            return R.fail("角色已被禁用！");
+
+        roleIds = roleIds.stream().distinct().collect(Collectors.toList()); //去重
+        List<String> orgRoleIds = sysUserRoleMapper
+                .selectList(new LambdaUpdateWrapper<SysUserRole>().eq(SysUserRole::getUserId, userId))
+                .stream()
+                .map(SysUserRole::getRoleId)
+                .collect(Collectors.toList());  //原本关联的角色ids
+        List<SysRole> sysRoleList = sysRoleMapper.selectBatchIds(roleIds);
+        List<String> disableIds = sysRoleList.stream()
+                .filter(sysRole -> sysRole.getStatus() == CommonConstants.STATUS_DISABLED) // 查询是否有禁用的
+                .filter(sysRole -> !orgRoleIds.contains(sysRole.getId()))  //排除之前绑定过，然后禁用的角色
+                .map(SysRole::getId).collect(Collectors.toList());
+
+        if (CollectionUtil.isNotEmpty(disableIds)) {
+            return R.fail(disableIds + "角色已经被禁用");
+        }
+        if (sysRoleList.size() != roleIds.size()) {
+            return R.fail("存在未知的角色id");
         }
 
-        //2.幂等校验
-        int count = sysUserRoleMapper.countByRelation(userId,roleId);
-        if(count > 0){
-            return R.fail("该用户已拥有此角色，请勿重复添加");
-        }
+        //2.先删除
+        sysUserRoleMapper.deleteByUserId(userId);
 
         //3.插入数据库
-        SysUserRole sysUserRole = new SysUserRole(userId, roleId);
-        int rows = sysUserRoleMapper.insert(sysUserRole);
-        if(rows > 0){
-            //清除缓存
-            redisTemplate.delete(RedisConstants.RBAC.USER_CACHE_PREFIX+userId);
-            return R.ok();
+        sysUserRoleMapper.insertBatch(userId, roleIds);
+
+        //清除缓存
+        redisTemplate.delete(RedisConstants.RBAC.USER_CACHE_PREFIX + userId);
+        return R.ok();
+
+    }
+
+    @Override
+    public R getRoleIdsByUserId(String id) {
+        if(StrUtil.isBlank(id)){
+            return R.fail("用户id不能为空！");
         }
-        return R.fail("插入失败！");
+
+        List<String> roleIds = sysUserRoleMapper
+                .selectList(new LambdaUpdateWrapper<SysUserRole>().eq(SysUserRole::getUserId, id))
+                .stream()
+                .map(SysUserRole::getRoleId)
+                .collect(Collectors.toList());
+        return R.ok(roleIds);
     }
 
 }

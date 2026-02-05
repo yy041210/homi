@@ -210,6 +210,16 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
             return R.fail("存在 未知的菜单id");
         }
 
+        List<String> orgMenuIds = sysRoleMenuMapper.selectMenuIdsByRoleId(roleId); //原本已存在的所有菜单
+        List<String> disableIds = sysMenuList.stream()
+                .filter(sysMenu -> sysMenu.getStatus() == CommonConstants.STATUS_DISABLED)
+                .filter(sysMenu -> !orgMenuIds.contains(sysMenu.getId()))
+                .map(SysMenu::getId).collect(Collectors.toList());
+
+        if(CollectionUtil.isNotEmpty(disableIds)){
+            return R.fail(disableIds+"菜单已经被禁用!");
+        }
+
         // 2. 先删除再插入
         sysRoleMenuMapper.deleteByRoleId(roleId);
         sysRoleMenuMapper.insertBatch(roleId,menuIds);

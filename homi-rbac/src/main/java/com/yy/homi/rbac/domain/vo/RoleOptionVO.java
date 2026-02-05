@@ -6,5 +6,5 @@ import lombok.Data;
 public class RoleOptionVO {
     private String id;
     private String roleName;
-    private String status;
+    private Integer status;
 }

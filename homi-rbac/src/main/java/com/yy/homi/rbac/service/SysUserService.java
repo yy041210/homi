@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.rbac.domain.dto.request.AddUserRolesReqDTO;
 import com.yy.homi.rbac.domain.dto.request.UserInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.UserUpdateReqDTO;
 import com.yy.homi.rbac.domain.entity.SysUser;
@@ -25,5 +26,7 @@ public interface SysUserService extends IService<SysUser> {
 
     R changeStatus(String userId);
 
-    R addUserRoleRelation(String userId, String roleId);
+    R addUserRoleRelation(AddUserRolesReqDTO addUserRolesReqDTO);
+
+    R getRoleIdsByUserId(String id);
 }

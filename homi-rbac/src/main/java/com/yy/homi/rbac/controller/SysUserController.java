@@ -1,6 +1,7 @@
 package com.yy.homi.rbac.controller;
 
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.rbac.domain.dto.request.AddUserRolesReqDTO;
 import com.yy.homi.rbac.domain.dto.request.UserInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.UserPageListResDTO;
 import com.yy.homi.rbac.domain.dto.request.UserUpdateReqDTO;
@@ -77,16 +78,19 @@ public class SysUserController {
         return sysUserService.changeStatus(id);
     }
 
+    //查询用户的已分配的角色ids
+    @Operation(summary = "获取用户关联的roleIds", description = "获取用户关联的roleIds")
+    @Parameter(name = "id", description = "用户ID", required = true)
+    @GetMapping("/getRoleIdsByUserId")
+    public R getRoleIdsByUserId(@RequestParam("id") @NotBlank(message = "用户id不能为空") String id) {
+        return sysUserService.getRoleIdsByUserId(id);
+    }
+
     //给用户分配角色
     @Operation(summary = "分配用户角色", description = "建立用户与角色的关联关系")
-    @Parameters({
-            @Parameter(name = "userId", description = "用户ID", required = true),
-            @Parameter(name = "roleId", description = "角色ID", required = true)
-    })
-    @GetMapping("/addUserRoleRelation")
-    public R addUserRoleRelation(@RequestParam("userId") @NotBlank(message = "用户id不能为空") String userId,
-                                 @RequestParam("roleId") @NotBlank(message = "角色id不能为空") String roleId) {
-        return sysUserService.addUserRoleRelation(userId,roleId);
+    @PostMapping ("/addUserRoleRelation")
+    public R addUserRoleRelation(@Validated @RequestBody AddUserRolesReqDTO addUserRolesReqDTO) {
+        return sysUserService.addUserRoleRelation(addUserRolesReqDTO);
     }
 
 }
