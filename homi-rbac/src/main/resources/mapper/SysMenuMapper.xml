@@ -47,6 +47,14 @@
         where id = #{menuId}
     </update>
 
+    <update id="updateStatusByIds">
+        update sys_menu set status = #{status}
+        where id in
+        <foreach collection="menuIds" item="menuId" open="(" separator="," close=")">
+            #{menuId}
+        </foreach>
+    </update>
+
     <select id="selectMenuList" resultType="com.yy.homi.rbac.domain.entity.SysMenu">
         select * from sys_menu
         <where>
@@ -90,6 +98,10 @@
         and m.visible = 0
         and m.menu_type in ('M','C')
         and r.status = 0
+    </select>
+
+    <select id="selectMenusByParentIdAndStatus" resultType="com.yy.homi.rbac.domain.entity.SysMenu">
+        select * from sys_menu where parent_id = #{parentId} and status = #{status}
     </select>
 
 

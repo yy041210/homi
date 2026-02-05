@@ -153,6 +153,15 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
                 : CommonConstants.STATUS_ENABLED;
 
         // 3. 如果是停用操作，需要递归停用所有下级（可选，根据业务需求）
+        //判断 禁用操作且是目录
+        if (CommonConstants.STATUS_DISABLED == newStatus && menu.getMenuType().equals(RbacConstants.TYPE_DIR)) {
+            //级联停用所有子菜单
+            List<SysMenu> sysMenuList = sysMenuMapper.selectMenusByParentIdAndStatus(menu.getId(),CommonConstants.STATUS_ENABLED); //查询所有状态是非禁用的，并且是指定目录的直接子菜单
+            if(CollectionUtil.isNotEmpty(sysMenuList)){
+                List<String> menuIds = sysMenuList.stream().map(SysMenu::getId).collect(Collectors.toList());
+                sysMenuMapper.updateStatusByIds(menuIds,CommonConstants.STATUS_DISABLED);
+            }
+        }
         sysMenuMapper.updateStatusById(id, newStatus);
 
         return R.ok("更改状态成功");
