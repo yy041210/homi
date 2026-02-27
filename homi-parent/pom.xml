@@ -16,6 +16,7 @@
         <module>../homi-rbac</module>
         <module>../homi-gateway</module>
         <module>../homi-third-patry</module>
+        <module>../homi-hotel</module>
     </modules>
 
     <properties>

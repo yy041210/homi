@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.hotel.mapper.HotelAlbumMapper">
+
+    <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelAlbum">
+        <id column="id" property="id" />
+        <result column="hotel_id" property="hotelId" />
+        <result column="room_id" property="roomId" />
+        <result column="user_id" property="userId" />
+        <result column="seq" property="seq" />
+        <result column="source" property="source" />
+        <result column="category" property="category" />
+        <result column="image_id" property="imageId" />
+        <result column="image_url" property="imageUrl" />
+        <result column="create_by" property="createBy" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+</mapper>

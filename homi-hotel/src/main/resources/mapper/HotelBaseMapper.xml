@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.hotel.mapper.HotelBaseMapper">
+
+    <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelBase">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="name_en" property="nameEn" />
+        <result column="star" property="star" />
+        <result column="open_year" property="openYear" />
+        <result column="room_count" property="roomCount" />
+        <result column="phone" property="phone" />
+        <result column="description" property="description" />
+        <result column="province_id" property="provinceId" />
+        <result column="city_id" property="cityId" />
+        <result column="address" property="address" />
+        <result column="lat" property="lat" />
+        <result column="lon" property="lon" />
+        <result column="create_by" property="createBy" />
+        <result column="create_time" property="createTime" />
+        <result column="update_by" property="updateBy" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, name_en, star, open_year, room_count, phone, description,
+        province_id, city_id, address, lat, lon, create_by, create_time, update_by, update_time
+    </sql>
+
+</mapper>
