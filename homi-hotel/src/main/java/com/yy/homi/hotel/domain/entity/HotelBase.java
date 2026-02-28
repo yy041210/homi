@@ -25,9 +25,10 @@ public class HotelBase {
     private String description;  // 对应：简介内容
     private Integer provinceId; //关联省id
     private Integer cityId; //关联市id
+    private Integer districtId;  //关联的区id
     private String address; //地址
     private Double lat; //纬度
-    private Double lon; //经度
+    private Double lng; //经度
 
 
     /** 创建者 */

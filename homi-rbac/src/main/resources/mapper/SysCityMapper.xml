@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.rbac.mapper.SysCityMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.yy.homi.rbac.domain.entity.SysCity">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="nameEn" column="name_en"/>
+        <result property="provinceId" column="province_id"/>
+        <result property="centerLng" column="center_lng"/>
+        <result property="centerLat" column="center_lat"/>
+        <result property="sort" column="sort"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 通用查询列 -->
+    <sql id="Base_Column_List">
+        id, name, name_en, province_id, center_lng, center_lat, sort, status, create_time, update_time
+    </sql>
+
+    <!-- 根据省份ID查询城市 -->
+    <select id="selectByProvinceId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_city
+        WHERE province_id = #{provinceId}
+        ORDER BY sort
+    </select>
+
+    <!-- 根据名称查询城市 -->
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_city
+        WHERE name LIKE CONCAT('%', #{name}, '%')
+        ORDER BY sort
+    </select>
+
+    <!-- 批量插入或更新 -->
+    <insert id="batchInsertOrUpdate">
+        INSERT INTO sys_city (
+        id, name, name_en, province_id, center_lng, center_lat, sort, status, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.id}, #{item.name}, #{item.nameEn}, #{item.provinceId},
+            #{item.centerLng}, #{item.centerLat}, #{item.sort}, #{item.status},
+            #{item.createTime}, #{item.updateTime}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        name_en = VALUES(name_en),
+        province_id = VALUES(province_id),
+        center_lng = VALUES(center_lng),
+        center_lat = VALUES(center_lat),
+        sort = VALUES(sort),
+        status = VALUES(status),
+        update_time = VALUES(update_time)
+    </insert>
+
+</mapper>

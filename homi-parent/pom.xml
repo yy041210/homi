@@ -45,6 +45,7 @@
         <google-zxing.version>3.5.2</google-zxing.version>
         <kaptcha.version>2.3.2</kaptcha.version>
         <springdoc.version>1.7.0</springdoc.version>
+        <easyexcel.version>3.3.3</easyexcel.version>
     </properties>
 
     <dependencyManagement>
@@ -169,6 +170,12 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
                 <version>${alibaba-fastjson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>easyexcel</artifactId>
+                <version>${easyexcel.version}</version>
             </dependency>
 
             <dependency>

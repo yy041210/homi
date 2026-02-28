@@ -11,6 +11,12 @@ management:
         include: 'health'    # 仅暴露健康检查
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB  # 单个文件最大大小
+      max-request-size: 50MB  # 整个请求最大大小
+      enabled: true
+      file-size-threshold: 0
   application:
     name: homi-hotel
   devtools:
