@@ -17,7 +17,7 @@ public enum AlbumSourceEnum {
     }
 
     /**
-     * 根据描述转换（用于导入 CSV）
+     * 根据描述转换（
      */
     public static AlbumSourceEnum fromDesc(String desc) {
         for (AlbumSourceEnum s : values()) {

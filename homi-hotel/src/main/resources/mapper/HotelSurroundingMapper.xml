@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.hotel.mapper.HotelSurroundingMapper">
+
+    <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelSurrounding">
+        <id column="id" property="id"/>
+        <result column="hotel_id" property="hotelId"/>
+        <result column="category" property="category"/>
+        <result column="surrounding_name" property="surroundingName"/>
+        <result column="distance" property="distance"/>
+        <result column="distance_desc" property="distanceDesc"/>
+        <result column="arrival_type" property="arrivalType"/>
+        <result column="tag_name" property="tagName"/>
+        <result column="lat" property="lat"/>
+        <result column="lon" property="lon"/>
+        <result column="seq" property="seq" />
+    </resultMap>
+
+</mapper>
