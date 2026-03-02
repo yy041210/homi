@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 @Mapper
 public interface SysFileMapper extends BaseMapper<SysFile> {
     //根据文件hash值查询是否有一摸一样的文件

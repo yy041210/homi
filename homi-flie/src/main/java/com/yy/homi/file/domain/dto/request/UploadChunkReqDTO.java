@@ -11,8 +11,8 @@ import javax.validation.constraints.NotNull;
 @Schema(description = "分片上传请求参数")
 public class UploadChunkReqDTO {
     @Schema(description = "分片任务ID", example = "172045983745", required = true)
-    @NotNull(message = "任务id不能为空")
-    private Long taskId;
+    @NotBlank(message = "任务id不能为空")
+    private String taskId;
 
     @Schema(description = "当前分片索引 (从0开始)", example = "0", required = true)
     @NotNull(message = "分片索引不能为空")

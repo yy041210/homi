@@ -6,13 +6,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 
+@Validated
 @Tag(name = "01.基础文件接口", description = "处理单个或批量文件的标准上传与删除")
 @RestController
 @RequestMapping("/sysfile")
@@ -41,6 +45,13 @@ public class SysFileController {
     @GetMapping("/deleteOne")
     public R deleteOne(@RequestParam("fileId") @NotBlank String fileId) {
         return sysFileService.deleteOne(fileId);
+    }
+
+    //根据url集合上传文件
+    @Operation(summary = "批量上传文件", description = "支持同时选中多个文件上传")
+    @PostMapping("/uploadBatchUrls")
+    public R uploadBatchByUrls(@RequestBody @NotEmpty List<String> urls) {
+        return sysFileService.uploadBatchByUrls(urls);
     }
 
 

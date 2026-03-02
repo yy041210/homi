@@ -27,11 +27,14 @@ import javax.annotation.Resource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -75,7 +78,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
 
             String bucketName = fileTypeUtils.getBucketByExtension(extension);
             String endpoint = fileTypeUtils.getMinioConfig().getEndpoint();
-            String objectName = FileUtils.getHashPath(fileHash) + "."+extension;
+            String objectName = FileUtils.getHashPath(fileHash) + "." + extension;
             String url = endpoint + "/" + bucketName + "/" + objectName;
             saveSysFile.setFileName(originalFilename);
             saveSysFile.setFileHash(fileHash);
@@ -188,7 +191,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         List<SysFileVO> successFiles = new ArrayList<>();
         List<String> errorMsgs = new ArrayList<>();
         results.stream()
-                .filter(r -> r.getCode() ==  HttpStatus.OK.value())
+                .filter(r -> r.getCode() == HttpStatus.OK.value())
                 .forEach(r -> {
                     SysFile data = (SysFile) r.getData();
                     SysFileVO sysFileVO = new SysFileVO();
@@ -196,7 +199,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
                     successFiles.add(sysFileVO);
                 });
         results.stream()
-                .filter(r -> r.getCode() !=  HttpStatus.OK.value())
+                .filter(r -> r.getCode() != HttpStatus.OK.value())
                 .forEach(r -> {
                     String errorMsg = r.getMsg();
                     errorMsgs.add(errorMsg);
@@ -209,8 +212,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
     }
 
 
-
-    public void uploadMinio(byte[] bytes, String fileHash,String bucketName, String extension, String fileName) {
+    public void uploadMinio(byte[] bytes, String fileHash, String bucketName, String extension, String fileName) {
         try {
 
             // 上传到 MinIO 时设置响应头
@@ -233,8 +235,90 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         }
     }
 
+
+    @Override
+    @Transactional
+    public R uploadBatchByUrls(List<String> urls) {
+        if (CollectionUtil.isEmpty(urls)) {
+            return R.fail("urls集合不能为空！");
+        }
+        HashSet<String> urlsSet = new HashSet<>(urls);
+        CountDownLatch countDownLatch = new CountDownLatch(urlsSet.size());
+        ConcurrentHashMap<String, String> successMap = new ConcurrentHashMap<>();
+
+        //存入sys_file
+        List<SysFile> sysFiles = new ArrayList<>();
+        Map<String, String> result = new HashMap<>(); // k: url ,v : fileId
+        //查询所有文件
+        Map<String, String> hashIdMap = sysFileMapper.selectList(null).stream().collect(Collectors.toMap(SysFile::getFileHash, SysFile::getId));
+
+        // 存储失败的URL及错误信息
+        ConcurrentHashMap<String, String> errorMap = new ConcurrentHashMap<>();
+
+        urlsSet.forEach(url -> homiExecutor.submit(() -> {
+            try {
+                URL imageUrl = new URL(url);
+                URLConnection urlConnection = imageUrl.openConnection();
+                InputStream is = urlConnection.getInputStream();
+                String sha256 = FileUtils.getSha256(is);
+                String imageId = hashIdMap.get(sha256);
+                //校验数据库是否有相同文件
+                if (imageId != null) {
+                    result.put(url, imageId);
+                } else {
+                    SysFile sysFile = new SysFile();
+                    String[] split = url.split("/");
+                    sysFile.setFileName(split[split.length - 1]);
+                    sysFile.setFileHash(sha256);
+                    sysFile.setUrl(url);
+                    sysFile.setExtension("jpg");
+                    sysFile.setSize(urlConnection.getContentLengthLong());
+                    sysFile.setDelFlag(CommonConstants.DEL_NORMAL);
+                    sysFiles.add(sysFile);
+                }
+                countDownLatch.countDown();
+            } catch (MalformedURLException e) {
+                errorMap.put(url, "读取url失败! 异常信息：" + e.getMessage());
+            } catch (IOException e) {
+                errorMap.put(url, "读取url失败! 文件不存在");
+            }
+        }));
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+
+
+        successMap.forEach((k, v) -> {
+            //校验数据库是否有相同文件
+            if (hashIdMap.get(v) != null) {
+                result.put(k, hashIdMap.get(v));
+            } else {
+                SysFile sysFile = new SysFile();
+                String[] split = k.split("/");
+                sysFile.setFileName(split[split.length - 1]);
+                sysFile.setFileHash(v);
+                sysFile.setUrl(k);
+                sysFile.setExtension("jpg");
+                sysFile.setDelFlag(CommonConstants.DEL_NORMAL);
+                sysFiles.add(sysFile);
+            }
+        });
+
+        if(CollectionUtil.isNotEmpty(sysFiles)){
+            this.saveBatch(sysFiles);
+            sysFiles.stream().forEach(sysfile -> result.put(sysfile.getUrl(), sysfile.getId()));
+        }
+
+        return R.ok(result);
+    }
+
     /**
      * 检查是否存在可秒传或可复用的物理文件
+     *
      * @return 如果可以秒传，返回 SysFile 实体；否则返回 null
      */
     public SysFile getReusableSysFile(String fileHash, String filename) {

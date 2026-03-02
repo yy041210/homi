@@ -14,10 +14,9 @@ import java.util.Date;
 public class SysChunkFile implements Serializable {
 
     @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+    private String id;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private Long taskId;
+    private String taskId;
 
     private String bucketName;
 

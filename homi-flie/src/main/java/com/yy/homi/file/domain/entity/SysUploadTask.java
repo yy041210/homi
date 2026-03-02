@@ -20,8 +20,7 @@ public class SysUploadTask implements Serializable {
 
 
     @TableId(type = IdType.ASSIGN_ID)
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private Long id;
+    private String id;
 
     /**
      * 母文件唯一哈希 (SHA-256)

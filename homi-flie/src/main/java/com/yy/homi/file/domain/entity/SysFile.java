@@ -23,8 +23,7 @@ public class SysFile implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(type = IdType.ASSIGN_ID) // 使用雪花算法ID
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private Long id;
+    private String id;
 
     private String fileName;    // 原始文件名
     /**

@@ -9,7 +9,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @EnableFeignClients
 @MapperScan("com.yy.homi.hotel.mapper")
 @EnableDiscoveryClient
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.yy.homi.hotel", "com.yy.homi.common"})
 public class HomiHotelApplication {
     public static void main(String[] args) {
         SpringApplication.run(HomiHotelApplication.class,args);

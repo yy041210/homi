@@ -23,10 +23,10 @@ public enum AlbumCategoryEnum {
         this.desc = desc;
     }
 
-    public static int fromDesc(String desc) {
+    public static AlbumCategoryEnum fromDesc(String desc) {
         for (AlbumCategoryEnum c : values()) {
-            if (c.desc.equals(desc)) return c.getCode();
+            if (c.desc.equals(desc)) return c;
         }
-        return OTHER.getCode();
+        return OTHER;
     }
 }

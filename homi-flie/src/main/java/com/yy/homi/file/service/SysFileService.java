@@ -5,6 +5,8 @@ import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.file.domain.entity.SysFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface SysFileService extends IService<SysFile> {
     //上传单个文件
     R uploadOne(MultipartFile file);
@@ -24,4 +26,5 @@ public interface SysFileService extends IService<SysFile> {
     void uploadMinio(byte[] bytes, String fileHash,String bucketName, String extension, String fileName);
 
 
+    R uploadBatchByUrls(List<String> urls);
 }

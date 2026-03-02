@@ -64,7 +64,7 @@ public class SysChunkFileServiceImpl extends ServiceImpl<SysChunkFileMapper, Sys
     @Override
     public R uploadChunk(UploadChunkReqDTO uploadChunkReqDTO) {
         //1.准备变量
-        Long taskId = uploadChunkReqDTO.getTaskId();
+        String taskId = uploadChunkReqDTO.getTaskId();
         Integer chunkIndex = uploadChunkReqDTO.getChunkIndex();
         String lockKey = String.format(FileConstants.UPLOAD_CHUNK_LOCK_PREFIX, taskId, chunkIndex);
         RLock lock = redissonClient.getLock(lockKey);
@@ -215,7 +215,7 @@ public class SysChunkFileServiceImpl extends ServiceImpl<SysChunkFileMapper, Sys
                 sysFileMapper.insert(sysFile);
 
                 //7.删除数据库分片记录
-                List<Long> chunkIds = sysChunkFiles.stream().map(SysChunkFile::getId).collect(Collectors.toList());
+                List<String> chunkIds = sysChunkFiles.stream().map(SysChunkFile::getId).collect(Collectors.toList());
                 sysChunkFileMapper.deleteBatchIds(chunkIds);
 
                 //8.异步处理minio的分片记录
