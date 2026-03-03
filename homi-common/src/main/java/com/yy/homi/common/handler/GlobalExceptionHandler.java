@@ -62,7 +62,7 @@ public class GlobalExceptionHandler {
             log.error("请求地址'{}',参数校验异常类型: {}, 异常信息: {}", request.getRequestURI(), e.getClass().getName(), e.getMessage());
             // 处理单个参数 (@RequestParam) 的校验
             msg = ((ConstraintViolationException) e).getConstraintViolations().stream()
-                    .map(ConstraintViolation::getMessage)
+                    .map(constraintViolation -> constraintViolation.getPropertyPath()+constraintViolation.getMessage())
                     .collect(Collectors.joining(", "));
         } else if (e instanceof BindException) {
             log.error("请求地址'{}',参数校验异常类型: {}, 异常信息: {}", request.getRequestURI(), e.getClass().getName(), e.getMessage());

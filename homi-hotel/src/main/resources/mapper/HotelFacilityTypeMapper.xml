@@ -3,13 +3,19 @@
 <mapper namespace="com.yy.homi.hotel.mapper.HotelFacilityTypeMapper">
 
     <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelFacilityType">
-        <id column="id" property="id" />
-        <result column="name" property="name" />
-        <result column="icon" property="icon" />
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="icon" property="icon"/>
+        <result column="seq" property="seq"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, name, icon
+        id
+        ,name, icon,seq,create_by, create_time, update_by, update_time
     </sql>
 
 </mapper>

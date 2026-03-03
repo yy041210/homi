@@ -7,6 +7,7 @@ public class RbacConstants {
     public static final String ADMIN_ROLE_ID = "1";
     public static final String ADMIN_ROLE_KEY = "ROLE_ADMIN";
 
+    public static final String SECURITY_DEFAULT_PRINCIPAL = "anonymousUser";
     /** * 菜单类型
      */
     public static final String TYPE_DIR = "M";   // 目录

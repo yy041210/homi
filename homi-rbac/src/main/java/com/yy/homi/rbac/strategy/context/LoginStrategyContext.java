@@ -1,4 +1,4 @@
-package com.yy.homi.rbac.service.impl;
+package com.yy.homi.rbac.strategy.context;
 
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.dto.request.LoginReqDTO;
@@ -7,14 +7,14 @@ import com.yy.homi.rbac.strategy.UserLoginStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-@Service
+@Component
 public class LoginStrategyContext {
     public static final Map<String, UserLoginStrategy> USER_LOGIN_STRATEGY_MAP = new ConcurrentHashMap();
 

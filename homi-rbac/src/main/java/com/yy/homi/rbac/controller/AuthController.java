@@ -1,10 +1,9 @@
 package com.yy.homi.rbac.controller;
 
-import com.yy.homi.common.constant.RbacConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.dto.request.LoginReqDTO;
 import com.yy.homi.rbac.service.AuthService;
-import com.yy.homi.rbac.service.impl.LoginStrategyContext;
+import com.yy.homi.rbac.strategy.context.LoginStrategyContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;

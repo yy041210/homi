@@ -1,11 +1,11 @@
 package com.yy.homi.hotel.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Date;
 
 //酒店设施实体类
 @Data
@@ -28,17 +28,30 @@ public class HotelFacility {
 
     private String icon; //该类型对应的icon (如 "icon-basic")
 
-    private Integer chargeStandard; //收费标准 0 位置 1标准 2免费 3收费
-
-    private String chargeStandardDesc; //收费标准描述
+    private String tags;  //标签 例如： 收费,每天80
 
     /**
      * 状态：启用/禁用
      */
     private Integer status;
 
-    /**
-     * 备注：如 "停车场位于酒店后院" 或 "早餐收费 38/人"
-     */
-    private String remark;
+    private String imageUrl;
+
+    /** 创建者 */
+    @TableField(fill = FieldFill.INSERT)
+    private String createBy;
+
+    /** 创建时间 */
+    @TableField(fill = FieldFill.INSERT)
+    private Date createTime;
+
+    /** 更新者 */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private String updateBy;
+
+    /** 更新时间 */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private Date updateTime;
+
+
 }

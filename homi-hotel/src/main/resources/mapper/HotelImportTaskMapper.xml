@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yy.homi.hotel.mapper.HotelImportTaskMapper">
+
+    <!-- 实体类与数据库字段映射 -->
+    <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelImportTask">
+        <id column="id" property="id"/>
+        <result column="task_name" property="taskName"/>
+        <result column="task_type" property="taskType"/>
+        <result column="status" property="status"/>
+        <result column="total_count" property="totalCount"/>
+        <result column="processed_count" property="processedCount"/>
+        <result column="start_time" property="startTime"/>
+        <result column="finish_time" property="finishTime"/>
+        <result column="cost_time" property="costTime"/>
+        <result column="error_msg" property="errorMsg"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id
+        , task_name, task_type, status, total_count, processed_count,
+        start_time, finish_time, cost_time, error_msg,create_by, update_time
+    </sql>
+
+
+    <!-- 批量插入任务 -->
+    <insert id="insertBatch" parameterType="list">
+        INSERT INTO hotel_import_task (
+        id, task_name, task_type, status, total_count, processed_count,
+        start_time, finish_time, cost_time, create_by, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.id},
+            #{item.taskName},
+            #{item.taskType},
+            #{item.status},
+            #{item.totalCount},
+            #{item.processedCount},
+            #{item.startTime},
+            #{item.finishTime},
+            #{item.costTime},
+            #{item.createBy},
+            #{item.updateTime}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据ID查询任务 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM hotel_import_task
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询所有任务 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM hotel_import_task
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据状态查询任务 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM hotel_import_task
+        WHERE status = #{status}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据用户ID查询任务 -->
+    <select id="selectByCreateBy" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM hotel_import_task
+        WHERE create_by = #{createBy}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页查询任务 -->
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM hotel_import_task
+        <where>
+            <if test="taskName != null and taskName != ''">
+                AND task_name LIKE CONCAT('%', #{taskName}, '%')
+            </if>
+            <if test="taskType != null and taskType != ''">
+                AND task_type = #{taskType}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                AND create_by = #{createBy}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新任务状态为执行中 -->
+    <update id="updateToRunning">
+        UPDATE hotel_import_task
+        SET status      = #{status},
+            start_time  = NOW(),
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新任务为成功完成 -->
+    <update id="updateToSuccess">
+        UPDATE hotel_import_task
+        SET status      = #{status},
+            finish_time = NOW(),
+            update_time = NOW(),
+            cost_time   = TIMESTAMPDIFF(SECOND, start_time, NOW())
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新任务为失败 -->
+    <update id="updateToFailed">
+        UPDATE hotel_import_task
+        SET status      = #{status},
+            error_msg   = #{errorMsg},
+            finish_time = NOW(),
+            update_time = NOW(),
+            cost_time   = TIMESTAMPDIFF(SECOND, start_time, NOW())
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加已处理数量 -->
+    <update id="incrementProcessedCount">
+        UPDATE hotel_import_task
+        SET processed_count = processed_count + #{increment},
+            update_time     = NOW()
+        WHERE id = #{taskId}
+    </update>
+
+    <!-- 更新任务总行数 -->
+    <update id="updateTotalCount">
+        UPDATE hotel_import_task
+        SET total_count = #{totalCount},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除任务 -->
+    <delete id="deleteById">
+        DELETE
+        FROM hotel_import_task
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除任务 -->
+    <delete id="deleteBatch">
+        DELETE FROM hotel_import_task
+        WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+
+    <!-- 查询进行中的任务 -->
+    <select id="selectRunningTasks" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM hotel_import_task
+        WHERE status IN (0, 1)
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 查询最近的任务 -->
+    <select id="selectRecentTasks" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM hotel_import_task
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 更新任务基本信息 -->
+    <update id="updateTask" parameterType="com.yy.homi.hotel.domain.entity.HotelImportTask">
+        UPDATE hotel_import_task
+        <set>
+            <if test="taskName != null">task_name = #{taskName},</if>
+            <if test="taskType != null">task_type = #{taskType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="totalCount != null">total_count = #{totalCount},</if>
+            <if test="processedCount != null">processed_count = #{processedCount},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="costTime != null">cost_time = #{costTime},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -3,19 +3,23 @@
 <mapper namespace="com.yy.homi.hotel.mapper.HotelFacilityMapper">
 
     <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelFacility">
-        <id column="id" property="id" />
-        <result column="hotel_id" property="hotelId" />
-        <result column="hotel_facility_type_id" property="hotelFacilityTypeId" />
-        <result column="name" property="name" />
-        <result column="icon" property="icon" />
-        <result column="charge_standard" property="chargeStandard" />
-        <result column="charge_standard_desc" property="chargeStandardDesc" />
-        <result column="status" property="status" />
-        <result column="remark" property="remark" />
+        <id column="id" property="id"/>
+        <result column="hotel_id" property="hotelId"/>
+        <result column="hotel_facility_type_id" property="hotelFacilityTypeId"/>
+        <result column="name" property="name"/>
+        <result column="icon" property="icon"/>
+        <result column="tags" property="tags"/>
+        <result column="status" property="status"/>
+        <result column="imageUrl" property="imageUrl"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, hotel_id, hotel_facility_type_id, name, icon, charge_standard, charge_standard_desc, status, remark
+        id
+        , hotel_id, hotel_facility_type_id, name, icon, tags, status, imageUrl ,create_by, create_time, update_by, update_time
     </sql>
 
 </mapper>
