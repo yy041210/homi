@@ -1,6 +1,7 @@
 package com.yy.homi.hotel.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ public class HotelRoom {
     private String area;  //面积
     private String floor; //楼层
     private String bedType; //床型
+    @TableField("`window`")
     private String window;  // 有窗 | 无窗 | 落地窗 | ...
     private String wifi;  // WIFI免费 | ...
     private String smoke;  // 禁烟 | 可吸烟 | ..

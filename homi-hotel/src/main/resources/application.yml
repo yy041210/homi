@@ -71,7 +71,7 @@ mybatis-plus:
   mapper-locations: classpath:mapper/*.xml # 指定 Mapper XML 的存放位置
   configuration:
     map-underscore-to-camel-case: true  # 开启自动驼峰命名转换（重要：否则 user_name 无法映射到 userName）
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 开启日志打印，开发阶段能看到 SQL 语句
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 开启日志打印，开发阶段能看到 SQL 语句
   global-config:
     db-config:
       id-type: assign_id # 设置主键策略为雪花算法（对应你在实体类里配的 IdType.ASSIGN_ID）

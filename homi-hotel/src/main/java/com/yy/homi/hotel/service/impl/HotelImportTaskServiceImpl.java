@@ -84,10 +84,10 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
             return R.fail("csv文件中无数据！");
         }else{
             //判断csv格式
+            // 1. 创建 CsvReader（指定 GBK 编码解决你之前的报错）
+            CsvReader reader = CsvUtil.getReader();
             if (taskType.equals("HOTEL_FACILITY")) {
                 //酒店设备，7列
-                // 1. 创建 CsvReader（指定 GBK 编码解决你之前的报错）
-                CsvReader reader = CsvUtil.getReader();
                 // 2. 只读取文件头
                 CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
                 if (csvData.getRowCount() > 0) {
@@ -97,9 +97,18 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                         return R.fail("csv文件格式不正确！");
                     }
                 }
-
+            } else if(taskType.equals("HOTEL_ROOM")){
+                //酒店基本房型，12列
+                // 2. 只读取文件头
+                CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
+                if (csvData.getRowCount() > 0) {
+                    int columnCount = csvData.getRow(0).getFieldCount();
+                    if (columnCount != 12) {
+                        destFile.delete();
+                        return R.fail("csv文件格式不正确！");
+                    }
+                }
             }
-//        else - if
 
         }
 
