@@ -108,6 +108,17 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                         return R.fail("csv文件格式不正确！");
                     }
                 }
+            } else if (taskType.equals("HOTEL_INTRODUCTION")) {
+                //酒店简介相关内容，5列
+                // 2. 只读取文件头
+                CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
+                if (csvData.getRowCount() > 0) {
+                    int columnCount = csvData.getRow(0).getFieldCount();
+                    if (columnCount != 5) {
+                        destFile.delete();
+                        return R.fail("csv文件格式不正确！");
+                    }
+                }
             }
 
         }

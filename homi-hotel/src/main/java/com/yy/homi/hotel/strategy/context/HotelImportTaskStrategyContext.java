@@ -42,7 +42,7 @@ public class HotelImportTaskStrategyContext {
         }
 
         // 2. 调用策略执行逻辑
-        // 注意：实际生产中，strategy.execute 方法通常被标注为 @Async 以实现异步处理
+        // strategy.execute 方法通常被标注为 @Async 以实现异步处理
         hotelImportTaskStrategy.execute(taskId, filePath, userId);
     }
 

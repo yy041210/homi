@@ -107,7 +107,9 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
 
                         @Override
                         public void onException(Exception exception, AnalysisContext context) throws Exception {
-                            ReadListener.super.onException(exception, context);
+                            // 更新任务状态为失败
+                            hotelImportTaskMapper.updateToFailed(taskId, HotelImportTask.STATUS_FAILED, "Excel读取异常! 异常信息："+ exception.getMessage());
+                            throw exception;
                         }
 
                         private void processData(List<Map<Integer, String>> dataList) {
@@ -165,7 +167,7 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                             .filter(item -> item.getImageUrl().equals(imageUrl))
                                             .filter(item -> item.getRoomId().equals(roomId))
                                             .collect(Collectors.toList());
-                                    if(CollectionUtil.isNotEmpty(existSameHotelAlbum)){
+                                    if (CollectionUtil.isNotEmpty(existSameHotelAlbum)) {
                                         continue;
                                     }
 
@@ -174,13 +176,13 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                             .filter(item -> item.getImageUrl().equals(imageUrl))
                                             .filter(item -> item.getRoomId() == null)
                                             .collect(Collectors.toList());
-                                    if(CollectionUtil.isNotEmpty(hotelAlbumList)){
+                                    if (CollectionUtil.isNotEmpty(hotelAlbumList)) {
                                         //需要修改，添加上 roomId字段
                                         hotelAlbumList.stream().forEach(hotelAlbum -> {
                                             hotelAlbum.setRoomId(roomId);
                                             updateHotelAlums.add(hotelAlbum);
                                         });
-                                    }else{
+                                    } else {
                                         HotelAlbum hotelAlbum = new HotelAlbum();
                                         hotelAlbum.setRoomId(roomId);
                                         hotelAlbum.setHotelId(hotelId);
@@ -195,7 +197,7 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                 }
 
                                 //基本房型数据
-                                if(allHotelIdRoomId.contains(hotelId+"_"+roomId)){
+                                if (allHotelIdRoomId.contains(hotelId + "_" + roomId)) {
                                     continue;  //房型已经存在，跳过
                                 }
                                 HotelRoom hotelRoom = new HotelRoom();
@@ -232,15 +234,12 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                             hotelAlbumService.saveBatch(hotelAlbums);
                             hotelAlbumService.updateBatchById(updateHotelAlums);
 
-                            hotelImportTaskMapper.incrementProcessedCount(taskId,dataList.size());
+                            hotelImportTaskMapper.incrementProcessedCount(taskId, dataList.size());
                         }
                     })
                     .sheet()
                     .headRowNumber(1)  //不要表头
                     .doRead();
-        } catch (Exception e) {
-            hotelImportTaskMapper.updateToFailed(taskId,HotelImportTask.STATUS_FAILED,e.getMessage());
-            throw new ServiceException("EasyExcel 处理基本房型数据过程中发生异常。 异常信息"+e.getMessage());
         } finally {
             //删除临时文件
             tempFile.delete();
