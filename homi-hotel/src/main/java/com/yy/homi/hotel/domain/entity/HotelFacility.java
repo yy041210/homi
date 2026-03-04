@@ -37,6 +37,8 @@ public class HotelFacility {
 
     private String imageUrl;
 
+    private Integer seq;
+
     /** 创建者 */
     @TableField(fill = FieldFill.INSERT)
     private String createBy;

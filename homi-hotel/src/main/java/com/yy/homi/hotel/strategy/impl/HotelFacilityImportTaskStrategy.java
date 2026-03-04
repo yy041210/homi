@@ -140,7 +140,6 @@ public class HotelFacilityImportTaskStrategy implements HotelImportTaskStrategy 
                                 // 必填字段校验
                                 if (StrUtil.isEmpty(hotelId) || StrUtil.isEmpty(parentCategory) ||
                                         StrUtil.isEmpty(facilityName) || StrUtil.isEmpty(statusStr) || StrUtil.isEmpty(seqStr)) {
-                                    log.warn("数据不完整，跳过：{}", rowData);
                                     continue;
                                 }
 
@@ -173,6 +172,7 @@ public class HotelFacilityImportTaskStrategy implements HotelImportTaskStrategy 
                                 hotelFacility.setTags(tags);
                                 hotelFacility.setStatus(Integer.parseInt(statusStr));
                                 hotelFacility.setImageUrl(imageUrl);
+                                hotelFacility.setSeq(Integer.parseInt(seqStr));
                                 hotelFacility.setCreateBy(userId);
                                 hotelFacility.setCreateTime(new Date());
                                 hotelFacility.setUpdateBy(userId);
