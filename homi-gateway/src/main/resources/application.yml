@@ -61,7 +61,7 @@ spring:
 # 日志配置
 logging:
   level:
-    org.springframework.web: debug # 设置 web 相关的日志为 DEBUG，你就能看到所有接口路径的加载了
+    org.springframework.web: info # 设置 web 相关的日志为 DEBUG，你就能看到所有接口路径的加载了
 
 #自定义网关白名单配置
 homi:
