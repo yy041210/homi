@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -195,18 +196,18 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     public R addRoleMenuRelation(AddRoleMenusReqDTO req) {
         String roleId = req.getRoleId();
         List<String> menuIds = req.getMenuIds();
-        if(StrUtil.isBlank(roleId) || CollectionUtil.isEmpty(menuIds)){
-            return  R.fail("roleId和menuIds不能为空！");
+        if (StrUtil.isBlank(roleId) || CollectionUtil.isEmpty(menuIds)) {
+            return R.fail("roleId和menuIds不能为空！");
         }
         // 1. 业务校验：检查角色和菜单是否真实存在（防止脏数据）
         SysRole sysRole = sysRoleMapper.selectById(roleId);
-        if(sysRole == null){
+        if (sysRole == null) {
             return R.fail("用户不存在！");
         }
 
         menuIds = menuIds.stream().distinct().collect(Collectors.toList());
         List<SysMenu> sysMenuList = sysMenuMapper.selectBatchIds(menuIds);
-        if(sysMenuList.size() != menuIds.size()){
+        if (sysMenuList.size() != menuIds.size()) {
             return R.fail("存在 未知的菜单id");
         }
 
@@ -216,13 +217,13 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
                 .filter(sysMenu -> !orgMenuIds.contains(sysMenu.getId()))
                 .map(SysMenu::getId).collect(Collectors.toList());
 
-        if(CollectionUtil.isNotEmpty(disableIds)){
-            return R.fail(disableIds+"菜单已经被禁用!");
+        if (CollectionUtil.isNotEmpty(disableIds)) {
+            return R.fail(disableIds + "菜单已经被禁用!");
         }
 
         // 2. 先删除再插入
         sysRoleMenuMapper.deleteByRoleId(roleId);
-        sysRoleMenuMapper.insertBatch(roleId,menuIds);
+        sysRoleMenuMapper.insertBatch(roleId, menuIds);
         return R.ok("插入成功！");
     }
 
@@ -233,5 +234,20 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
                 .list();
         List<RoleOptionVO> roleOptionVOList = sysRoleConvert.toRoleOptionVOList(sysRoleList);
         return R.ok(roleOptionVOList);
+    }
+
+    @Override
+    public R getRelatedRolesByMenuId(String menuId) {
+        if (StrUtil.isEmpty(menuId)) {
+            return R.fail("menuId不能为空！");
+        }
+
+        List<String> roleIds = sysRoleMenuMapper.selectRoleIdsByMenuId(menuId);
+        if(CollectionUtil.isEmpty(roleIds)){
+            return R.ok(new ArrayList<>());
+        }
+
+        List<SysRole> sysRoleList = sysRoleMapper.selectList(new LambdaQueryWrapper<SysRole>().in(SysRole::getId, roleIds));
+        return R.ok(sysRoleList);
     }
 }

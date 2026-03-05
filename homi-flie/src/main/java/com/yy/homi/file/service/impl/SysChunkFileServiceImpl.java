@@ -126,7 +126,7 @@ public class SysChunkFileServiceImpl extends ServiceImpl<SysChunkFileMapper, Sys
 
 
     @Override
-    public R mergeChunk(Long taskId) {
+    public R mergeChunk(String taskId) {
         RLock lock = redissonClient.getLock(String.format(FileConstants.MERGE_CHUNK_LOCK_PREFIX, taskId));
 
         try {
@@ -263,7 +263,7 @@ public class SysChunkFileServiceImpl extends ServiceImpl<SysChunkFileMapper, Sys
     }
 
     @Override
-    public R checkChunk(Long taskId, int chunkIndex) {
+    public R checkChunk(String taskId, int chunkIndex) {
         // 1. 先查数据库
         SysChunkFile sysChunkFile = sysChunkFileMapper
                 .selectOne(

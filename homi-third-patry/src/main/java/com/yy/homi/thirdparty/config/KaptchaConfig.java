@@ -28,16 +28,16 @@ public class KaptchaConfig {
         properties.put("kaptcha.textproducer.font.color", "black");
 
         // 验证码字符间的间距，设置为 10 像素
-        properties.put("kaptcha.textproducer.char.space", "10");
+        properties.put("kaptcha.textproducer.char.space", "5");
 
         // 验证码文本字符长度，这里设置为 5 位字符
         properties.put("kaptcha.textproducer.char.length","5");
 
         // 验证码图片的高度，单位为像素
-        properties.put("kaptcha.image.height","34");
+        properties.put("kaptcha.image.height","40");
 
         // 验证码图片的宽度，单位为像素
-        properties.put("kaptcha.image.width","138");
+        properties.put("kaptcha.image.width","120");
 
         // 验证码字体的字号大小，设置为 25 像素
         properties.put("kaptcha.textproducer.font.size","25");

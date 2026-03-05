@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
@@ -336,7 +337,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public R getRoleIdsByUserId(String id) {
-        if(StrUtil.isBlank(id)){
+        if (StrUtil.isBlank(id)) {
             return R.fail("用户id不能为空！");
         }
 
@@ -346,6 +347,20 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 .map(SysUserRole::getRoleId)
                 .collect(Collectors.toList());
         return R.ok(roleIds);
+    }
+
+    @Override
+    public R getRelatedUsersByRoleId(String roleId) {
+        if (StrUtil.isEmpty(roleId)) {
+            return R.fail("roleId不能为空！");
+        }
+        Set<String> userIds = sysUserRoleMapper.selectList(new LambdaQueryWrapper<SysUserRole>().eq(SysUserRole::getRoleId, roleId)).stream().map(SysUserRole::getUserId).collect(Collectors.toSet());
+        if (CollectionUtil.isEmpty(userIds)) {
+            return R.ok(new ArrayList<>());
+        }
+        List<SysUser> sysUsers = sysUserMapper.selectBatchIds(userIds);
+        List<SysUserVO> voList = sysUserConvert.toVoList(sysUsers);
+        return R.ok(voList);
     }
 
 }

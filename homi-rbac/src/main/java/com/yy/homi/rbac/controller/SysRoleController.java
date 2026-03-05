@@ -5,6 +5,7 @@ import com.yy.homi.rbac.domain.dto.request.AddRoleMenusReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RolePageListReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleUpdateReqDTO;
+import com.yy.homi.rbac.service.SysRoleMenuService;
 import com.yy.homi.rbac.service.SysRoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,6 +26,8 @@ public class SysRoleController {
 
     @Autowired
     private SysRoleService sysRoleService;
+    @Autowired
+    private SysRoleMenuService sysRoleMenuService;
 
     //查询所有角色(id,status,name)
     @Operation(summary = "查询所有角色id，name和status")
@@ -84,6 +87,18 @@ public class SysRoleController {
     @PostMapping("/addRoleMenuRelation")
     public R addRoleMenuRelation(@Validated @RequestBody AddRoleMenusReqDTO addRoleMenusReqDTO){
         return sysRoleService.addRoleMenuRelation(addRoleMenusReqDTO);
+    }
+
+    //根据菜单id查询关联的角色信息
+    @GetMapping("/getRelatedRolesByMenuId")
+    public R getRelatedRolesByMenuId(@RequestParam("menuId") @NotBlank String menuId){
+        return sysRoleService.getRelatedRolesByMenuId(menuId);
+    }
+
+    //删除角色和菜单的关联关系
+    @GetMapping("/removeRoleMenuRelation")
+    public R removeRoleMenuRelation(@RequestParam("roleId") @NotBlank String roleId,@RequestParam("menuId") @NotBlank String menuId){
+        return sysRoleMenuService.removeRoleMenuRelation(roleId,menuId);
     }
 
 

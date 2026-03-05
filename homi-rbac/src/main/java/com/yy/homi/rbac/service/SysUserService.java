@@ -29,4 +29,6 @@ public interface SysUserService extends IService<SysUser> {
     R addUserRoleRelation(AddUserRolesReqDTO addUserRolesReqDTO);
 
     R getRoleIdsByUserId(String id);
+
+    R getRelatedUsersByRoleId(String roleId);
 }

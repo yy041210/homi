@@ -32,7 +32,7 @@ public class SysChunkFileServiceImplTest {
     private final String filePath = "D:\\BaiduNetdiskDownload\\license plate recognition.zip";
     private final String bucketName = "homi-file";
     private final Long chunkSize = 1024 * 1024 * 20L;  //分块大小
-    private final Long taskId = 2013429648273022979L;
+    private final String taskId = "2013429648273022979";
 
     @Test
     @DisplayName("高并发上传测试：模拟多线程同时上传同一个分片")

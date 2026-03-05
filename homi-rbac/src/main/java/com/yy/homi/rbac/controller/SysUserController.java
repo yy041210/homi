@@ -5,6 +5,7 @@ import com.yy.homi.rbac.domain.dto.request.AddUserRolesReqDTO;
 import com.yy.homi.rbac.domain.dto.request.UserInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.UserPageListResDTO;
 import com.yy.homi.rbac.domain.dto.request.UserUpdateReqDTO;
+import com.yy.homi.rbac.service.SysUserRoleService;
 import com.yy.homi.rbac.service.SysUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,6 +26,8 @@ import java.util.List;
 public class SysUserController {
     @Autowired
     private SysUserService sysUserService;
+    @Autowired
+    private SysUserRoleService sysUserRoleService;
 
     //分页查询用户列表
     @Operation(summary = "分页查询用户列表")
@@ -88,9 +91,21 @@ public class SysUserController {
 
     //给用户分配角色
     @Operation(summary = "分配用户角色", description = "建立用户与角色的关联关系")
-    @PostMapping ("/addUserRoleRelation")
+    @PostMapping("/addUserRoleRelation")
     public R addUserRoleRelation(@Validated @RequestBody AddUserRolesReqDTO addUserRolesReqDTO) {
         return sysUserService.addUserRoleRelation(addUserRolesReqDTO);
+    }
+
+    //根据角色id查询关联的用户
+    @GetMapping("/getRelatedUsersByRoleId")
+    public R getRelatedUsersByRoleId(@RequestParam("roleId") @NotBlank String roleId) {
+        return sysUserService.getRelatedUsersByRoleId(roleId);
+    }
+
+    //删除用户和角色的关联关系
+    @GetMapping("/removeUserRoleRelation")
+    public R removeUserRoleRelation(@RequestParam("userId") @NotBlank String userId, @RequestParam("roleId") @NotBlank String roleId) {
+        return sysUserRoleService.removeUserRoleRelation(userId, roleId);
     }
 
 }

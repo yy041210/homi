@@ -33,5 +33,10 @@
         where menu_id =
               #{menuId}
     </select>
+    <select id="selectRoleIdsByMenuId" resultType="java.lang.String">
+        select role_id
+        from sys_role_menu
+        where menu_id = #{menuId}
+    </select>
 
 </mapper>

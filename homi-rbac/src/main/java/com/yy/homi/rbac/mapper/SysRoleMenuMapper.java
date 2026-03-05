@@ -2,10 +2,7 @@ package com.yy.homi.rbac.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yy.homi.rbac.domain.entity.SysRoleMenu;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -25,4 +22,9 @@ public interface SysRoleMenuMapper extends BaseMapper<SysRoleMenu> {
 
     @Insert("insert into sys_role_menu(role_id,menu_id) values(#{roleId},#{menuId})")
     int addRoleMenu(@Param("roleId") String roleId, @Param("menuId") String menuId);
+
+    List<String> selectRoleIdsByMenuId(@Param("menuId") String menuId);
+
+    @Delete("delete from sys_role_menu where role_id= #{roleId} and menu_id=#{menuId}")
+    int deleteByRoleIdAndMenuId(@Param("roleId") String roleId, @Param("menuId") String menuId);
 }

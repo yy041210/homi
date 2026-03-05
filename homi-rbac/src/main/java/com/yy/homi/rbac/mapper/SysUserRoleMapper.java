@@ -28,4 +28,7 @@ public interface SysUserRoleMapper extends BaseMapper<SysUserRole> {
     List<SysUserRole> selectByUserIds(@Param("userIds") Collection<String> userIds);
 
     int insertBatch(@Param("userId") String userId, @Param("roleIds") List<String> roleIds);
+
+    @Delete("delete from sys_user_role where user_id=#{userId} and role_id = #{roleId}")
+    int deleteByUserIdAndRoleId(@Param("userId") String userId, @Param("roleId") String roleId);
 }

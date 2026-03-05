@@ -24,4 +24,6 @@ public interface SysRoleService extends IService<SysRole> {
     R addRoleMenuRelation(AddRoleMenusReqDTO addRoleMenusReqDTO);
 
     R listAll();
+
+    R getRelatedRolesByMenuId(String menuId);
 }
