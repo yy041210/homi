@@ -40,4 +40,6 @@ public interface SysProvinceService extends IService<SysProvince> {
     R getIdByProName(String provinceName);
 
     R getAllProvinces();
+
+    R deleteById(Integer provinceId);
 }

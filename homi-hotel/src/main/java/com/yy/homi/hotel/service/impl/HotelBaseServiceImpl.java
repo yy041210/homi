@@ -8,15 +8,14 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.yy.homi.common.domain.entity.R; // 假设这是你的返回包装类
+import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.AddressInfoTO;
-import com.yy.homi.hotel.domain.dto.HotelBasePageListReqDTO;
+import com.yy.homi.hotel.domain.dto.request.HotelBasePageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelBase;
 import com.yy.homi.hotel.domain.entity.HotelStats;
 import com.yy.homi.hotel.feign.AmapLocationFeign;
@@ -27,14 +26,14 @@ import com.yy.homi.hotel.service.HotelStatsService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -255,6 +254,35 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         // 6. 封装并返回结果
         PageInfo<HotelBase> pageInfo = new PageInfo<>(list);
         return R.ok(pageInfo);
+    }
+
+
+    @Override
+    public R getByDistrictId(Integer districtId) {
+        if (districtId == null) {
+            return R.fail("districtId不能为空！");
+        }
+        List<HotelBase> hotelBases = hotelBaseMapper.selectList(new LambdaQueryWrapper<HotelBase>().eq(HotelBase::getDistrictId, districtId));
+        return R.ok(hotelBases);
+    }
+
+
+    @Override
+    public R getByCityId(Integer cityId) {
+        if (cityId == null) {
+            return R.fail("districtId不能为空！");
+        }
+        List<HotelBase> hotelBases = hotelBaseMapper.selectList(new LambdaQueryWrapper<HotelBase>().eq(HotelBase::getCityId, cityId));
+        return R.ok(hotelBases);
+    }
+
+    @Override
+    public R getByProvinceId(Integer provinceId) {
+        if (provinceId == null) {
+            return R.fail("districtId不能为空！");
+        }
+        List<HotelBase> hotelBases = hotelBaseMapper.selectList(new LambdaQueryWrapper<HotelBase>().eq(HotelBase::getProvinceId, provinceId));
+        return R.ok(hotelBases);
     }
 
 }

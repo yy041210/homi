@@ -1,5 +1,6 @@
 package com.yy.homi.rbac.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -7,11 +8,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.entity.SysCity;
 import com.yy.homi.rbac.domain.entity.SysDistrict;
+import com.yy.homi.rbac.feign.HotelBaseFeign;
 import com.yy.homi.rbac.mapper.SysCityMapper;
+import com.yy.homi.rbac.mapper.SysDistrictMapper;
 import com.yy.homi.rbac.service.SysCityService;
 import com.yy.homi.rbac.service.SysDistrictService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +32,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> implements SysCityService {
 
-    private final SysDistrictService districtService;
-    private final SysCityMapper cityMapper;
+    @Autowired
+    private  SysDistrictService districtService;
+    @Autowired
+    private  SysCityMapper cityMapper;
+    @Autowired
+    private SysDistrictMapper districtMapper;
+    @Autowired
+    private HotelBaseFeign hotelBaseFeign;
 
     @Override
     public List<SysCity> findByName(String name) {
@@ -113,5 +124,30 @@ public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> impl
     public R getAllCities() {
         List<SysCity> sysCities = cityMapper.selectList(new LambdaQueryWrapper<SysCity>().orderByAsc(SysCity::getSort));
         return R.ok(sysCities);
+    }
+
+    @Override
+    public R deleteById(Integer cityId) {
+        if(cityId == null){
+            return R.fail("市编码不能为空！");
+        }
+        List<SysDistrict> sysDistricts = districtMapper.selectByCityId(cityId);
+        if(CollectionUtil.isNotEmpty(sysDistricts)){
+           return R.fail("当前市有关联的区县，无法删除！");
+        }
+
+        R r = hotelBaseFeign.getByCityId(cityId);
+        if(r.getCode() != HttpStatus.OK.value()){
+            return R.fail("远程查询关联当前市的酒店集合失败！");
+        }
+
+        List<Object> hotelBases = (List<Object>) r.getData();
+
+        if(CollectionUtil.isNotEmpty(hotelBases)){
+            return R.fail("当前市有关联的酒店，无法删除！");
+        }
+
+        cityMapper.deleteById(cityId);
+        return R.ok("删除成功！");
     }
 }

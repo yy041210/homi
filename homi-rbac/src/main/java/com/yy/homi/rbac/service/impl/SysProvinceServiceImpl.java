@@ -1,5 +1,6 @@
 package com.yy.homi.rbac.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -7,12 +8,16 @@ import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.entity.SysCity;
 import com.yy.homi.rbac.domain.entity.SysDistrict;
 import com.yy.homi.rbac.domain.entity.SysProvince;
+import com.yy.homi.rbac.feign.HotelBaseFeign;
+import com.yy.homi.rbac.mapper.SysCityMapper;
 import com.yy.homi.rbac.mapper.SysProvinceMapper;
 import com.yy.homi.rbac.service.SysCityService;
 import com.yy.homi.rbac.service.SysDistrictService;
 import com.yy.homi.rbac.service.SysProvinceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +30,19 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SysProvinceServiceImpl extends ServiceImpl<SysProvinceMapper, SysProvince> implements SysProvinceService {
 
-    private final SysCityService cityService;
-    private final SysDistrictService districtService;
-    private final SysProvinceMapper provinceMapper;
+    @Autowired
+    private  SysCityService cityService;
+    @Autowired
+    private  SysDistrictService districtService;
+    @Autowired
+    private  SysProvinceMapper provinceMapper;
+    @Autowired
+    private SysCityMapper sysCityMapper;
+    @Autowired
+    private HotelBaseFeign hotelBaseFeign;
+
 
     @Override
     public List<SysProvince> findByNameLike(String name) {
@@ -117,5 +129,28 @@ public class SysProvinceServiceImpl extends ServiceImpl<SysProvinceMapper, SysPr
     public R getAllProvinces() {
         List<SysProvince> sysProvinces = provinceMapper.selectList(new LambdaQueryWrapper<SysProvince>().orderByAsc(SysProvince::getSort));
         return R.ok(sysProvinces);
+    }
+
+    @Override
+    public R deleteById(Integer provinceId) {
+        if(provinceId == null){
+            return  R.fail("省编码不能为空！");
+        }
+
+        List<SysCity> sysCities = sysCityMapper.selectByProvinceId(provinceId);
+        if(CollectionUtil.isNotEmpty(sysCities)){
+            return R.fail("当前省有关联的市，无法删除！");
+        }
+        R r = hotelBaseFeign.getByProvinceId(provinceId);
+        if(r.getCode() != HttpStatus.OK.value()){
+            return R.fail("远程查询当前省关联酒店失败！");
+        }
+        List<Object> hotelBases = (List<Object>) r.getData();
+
+        if(CollectionUtil.isNotEmpty(hotelBases)){
+            return R.fail("当前省有关联的酒店，无法删除！");
+        }
+        provinceMapper.deleteById(provinceId);
+        return R.ok("删除成功！");
     }
 }
