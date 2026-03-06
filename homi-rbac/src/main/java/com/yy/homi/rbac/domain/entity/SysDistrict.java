@@ -25,8 +25,6 @@ public class SysDistrict {
 
     private Integer cityId;  // 所属城市ID
 
-    private Integer provinceId;  // 所属省份ID
-
     private BigDecimal centerLng;  // 中心点经度
 
     private BigDecimal centerLat;  // 中心点纬度

@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.entity.SysCity;
@@ -105,6 +106,12 @@ public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> impl
             return R.fail("provinceId 不能为空！");
         }
         List<SysCity> sysCities = cityMapper.selectByProvinceId(provinceId);
+        return R.ok(sysCities);
+    }
+
+    @Override
+    public R getAllCities() {
+        List<SysCity> sysCities = cityMapper.selectList(new LambdaQueryWrapper<SysCity>().orderByAsc(SysCity::getSort));
         return R.ok(sysCities);
     }
 }

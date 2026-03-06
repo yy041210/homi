@@ -14,11 +14,6 @@ public interface SysDistrictService extends IService<SysDistrict> {
 
 
     /**
-     * 根据省份ID查询区县
-     */
-    List<SysDistrict> findByProvinceId(Integer provinceId);
-
-    /**
      * 根据名称查询区县
      */
     List<SysDistrict> findByName(String name);

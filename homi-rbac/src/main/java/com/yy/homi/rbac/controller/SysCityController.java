@@ -28,4 +28,9 @@ public class SysCityController {
     public R getCitiesByProId(@RequestParam("provinceId") @NotNull Integer provinceId){
         return sysCityService.getCitiesByProId(provinceId);
     }
+
+    @GetMapping("/getAllCities")
+    public R getAllCities(){
+        return sysCityService.getAllCities();
+    }
 }

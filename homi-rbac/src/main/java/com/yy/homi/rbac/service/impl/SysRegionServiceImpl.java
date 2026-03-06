@@ -3,6 +3,7 @@ package com.yy.homi.rbac.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.rbac.domain.dto.request.RegionInsertReqDTO;
 import com.yy.homi.rbac.domain.entity.SysCity;
 import com.yy.homi.rbac.domain.entity.SysDistrict;
 import com.yy.homi.rbac.domain.entity.SysProvince;
@@ -12,7 +13,9 @@ import com.yy.homi.rbac.mapper.SysProvinceMapper;
 import com.yy.homi.rbac.service.SysRegionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,23 +35,23 @@ public class SysRegionServiceImpl implements SysRegionService {
     public R getRegionTree() {
         // 1. 获取所有省、市、区（假设只查询启用状态的）
         List<SysProvince> allProvinces = provinceMapper.selectList(
-            new LambdaQueryWrapper<SysProvince>().eq(SysProvince::getStatus, 1).orderByAsc(SysProvince::getSort)
+                new LambdaQueryWrapper<SysProvince>().eq(SysProvince::getStatus, 1).orderByAsc(SysProvince::getSort)
         );
         List<SysCity> allCities = cityMapper.selectList(
-            new LambdaQueryWrapper<SysCity>().eq(SysCity::getStatus, 1).orderByAsc(SysCity::getSort)
+                new LambdaQueryWrapper<SysCity>().eq(SysCity::getStatus, 1).orderByAsc(SysCity::getSort)
         );
         List<SysDistrict> allDistricts = districtMapper.selectList(
-            new LambdaQueryWrapper<SysDistrict>().eq(SysDistrict::getStatus, 1).orderByAsc(SysDistrict::getSort)
+                new LambdaQueryWrapper<SysDistrict>().eq(SysDistrict::getStatus, 1).orderByAsc(SysDistrict::getSort)
         );
 
         // 2. 将区县按城市ID进行分组
         Map<Integer, List<SysDistrict>> districtMap = allDistricts.stream()
-            .collect(Collectors.groupingBy(SysDistrict::getCityId));
+                .collect(Collectors.groupingBy(SysDistrict::getCityId));
 
         // 3. 将城市归类到省份，并注入区县
         Map<Integer, List<SysCity>> cityMap = allCities.stream()
-            .peek(city -> city.setChildren(districtMap.get(city.getId()))) // 注入区县列表
-            .collect(Collectors.groupingBy(SysCity::getProvinceId));
+                .peek(city -> city.setChildren(districtMap.get(city.getId()))) // 注入区县列表
+                .collect(Collectors.groupingBy(SysCity::getProvinceId));
 
         // 4. 将城市列表注入省份
         allProvinces.forEach(province -> {
@@ -116,5 +119,75 @@ public class SysRegionServiceImpl implements SysRegionService {
                 .collect(Collectors.toList());
 
         return R.ok(resultTree);
+    }
+
+    @Override
+    @Transactional
+    public R insertRegion(RegionInsertReqDTO reqDTO) {
+        Integer type = reqDTO.getType();
+        Integer id = reqDTO.getId();
+        String name = reqDTO.getName();
+        String nameEn = reqDTO.getNameEn();
+        Integer parentId = reqDTO.getParentId();
+        Integer status = reqDTO.getStatus();
+        Integer sort = reqDTO.getSort();
+        BigDecimal centerLng = reqDTO.getCenterLng();
+        BigDecimal centerLat = reqDTO.getCenterLat();
+
+        if (type == null || id == null || StrUtil.isEmpty(name)) {
+            return R.fail("参数校验失败,类型|编号|名字 字段不能为空！");
+        }
+
+        if (type == 1) {
+            //新增能省份，不需要parentId
+            SysProvince sysProvince = new SysProvince();
+            sysProvince.setId(id);
+            sysProvince.setName(name);
+            sysProvince.setNameEn(nameEn);
+            sysProvince.setStatus(status);
+            sysProvince.setSort(sort);
+            sysProvince.setCenterLng(centerLng);
+            sysProvince.setCenterLat(centerLat);
+            provinceMapper.insert(sysProvince);
+        } else if (type == 2) {
+            //市
+            if(parentId == null){
+                return R.fail("需要选择所属省！");
+            }
+            SysProvince sysProvince = provinceMapper.selectById(parentId);
+            if(sysProvince == null){
+                return R.fail("所属省不存在！");
+            }
+            SysCity sysCity = new SysCity();
+            sysCity.setId(id);
+            sysCity.setName(name);
+            sysCity.setNameEn(nameEn);
+            sysCity.setStatus(status);
+            sysCity.setProvinceId(parentId);
+            sysCity.setCenterLng(centerLng);
+            sysCity.setCenterLat(centerLat);
+            cityMapper.insert(sysCity);
+        } else if (type == 3) {
+            //区
+            if(parentId == null){
+                return R.fail("需要选择所属市！");
+            }
+            SysCity sysCity = cityMapper.selectById(parentId);
+            if(sysCity == null){
+                return R.fail("所属市不存在！");
+            }
+            SysDistrict sysDistrict = new SysDistrict();
+            sysDistrict.setId(id);
+            sysDistrict.setName(name);
+            sysDistrict.setNameEn(nameEn);
+            sysDistrict.setStatus(status);
+            sysDistrict.setCityId(parentId);
+            sysDistrict.setCenterLng(centerLng);
+            sysDistrict.setCenterLat(centerLat);
+            districtMapper.insert(sysDistrict);
+        } else {
+            return R.fail("位置新增类型！");
+        }
+        return R.ok("新增成功！");
     }
 }

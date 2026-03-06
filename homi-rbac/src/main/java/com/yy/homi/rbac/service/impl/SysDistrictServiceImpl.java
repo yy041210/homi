@@ -25,10 +25,6 @@ public class SysDistrictServiceImpl extends ServiceImpl<SysDistrictMapper, SysDi
 
     private final SysDistrictMapper districtMapper;
 
-    @Override
-    public List<SysDistrict> findByProvinceId(Integer provinceId) {
-        return districtMapper.selectByProvinceId(provinceId);
-    }
 
     @Override
     public List<SysDistrict> findByName(String name) {

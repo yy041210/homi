@@ -9,7 +9,6 @@
         <result property="name" column="name"/>
         <result property="nameEn" column="name_en"/>
         <result property="cityId" column="city_id"/>
-        <result property="provinceId" column="province_id"/>
         <result property="centerLng" column="center_lng"/>
         <result property="centerLat" column="center_lat"/>
         <result property="sort" column="sort"/>
@@ -20,7 +19,8 @@
 
     <!-- 通用查询列 -->
     <sql id="Base_Column_List">
-        id, name, name_en, city_id, province_id, center_lng, center_lat, sort, status, create_time, update_time
+        id
+        , name, name_en, city_id, center_lng, center_lat, sort, status, create_time, update_time
     </sql>
 
     <!-- 根据城市ID查询区县 -->
@@ -39,22 +39,15 @@
         ORDER BY sort
     </select>
 
-    <!-- 根据省份ID查询区县 -->
-    <select id="selectByProvinceId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM sys_district
-        WHERE province_id = #{provinceId}
-        ORDER BY sort
-    </select>
 
     <!-- 批量插入或更新 -->
     <insert id="batchInsertOrUpdate">
         INSERT INTO sys_district (
-        id, name, name_en, city_id, province_id, center_lng, center_lat, sort, status, create_time, update_time
+        id, name, name_en, city_id, center_lng, center_lat, sort, status, create_time, update_time
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
-            #{item.id}, #{item.name}, #{item.nameEn}, #{item.cityId}, #{item.provinceId},
+            #{item.id}, #{item.name}, #{item.nameEn}, #{item.cityId},
             #{item.centerLng}, #{item.centerLat}, #{item.sort}, #{item.status},
             #{item.createTime}, #{item.updateTime}
             )

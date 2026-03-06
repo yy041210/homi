@@ -150,7 +150,6 @@ public class AmapDistrictImporter {
                     district.setId(Integer.valueOf(districtJson.getString("adcode")));
                     district.setName(districtJson.getString("name"));
                     district.setCityId(city.getId());
-                    district.setProvinceId(province.getId());
 
                     String districtCenter = districtJson.getString("center");
                     if (districtCenter != null && districtCenter.contains(",")) {

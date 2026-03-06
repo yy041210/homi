@@ -41,4 +41,6 @@ public interface SysCityService extends IService<SysCity> {
     R getIdByCityNameAndProId(String cityName, Integer provinceId);
 
     R getCitiesByProId(Integer provinceId);
+
+    R getAllCities();
 }

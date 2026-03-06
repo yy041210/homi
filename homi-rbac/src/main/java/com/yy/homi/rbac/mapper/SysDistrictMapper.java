@@ -26,11 +26,6 @@ public interface SysDistrictMapper extends BaseMapper<SysDistrict> {
     List<SysDistrict> selectByName(@Param("name") String name);
 
     /**
-     * 根据省份ID查询区县
-     */
-    List<SysDistrict> selectByProvinceId(@Param("provinceId") Integer provinceId);
-
-    /**
      * 统计每个区县的酒店数量（需要关联hotel_base表）
      */
     @Select("SELECT d.id, d.name, COUNT(h.id) as hotel_count " +

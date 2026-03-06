@@ -1,13 +1,11 @@
 package com.yy.homi.rbac.controller;
 
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.rbac.domain.dto.request.RegionInsertReqDTO;
 import com.yy.homi.rbac.service.SysRegionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotBlank;
 
@@ -24,9 +22,15 @@ public class SysRegionController {
         return sysRegionService.getRegionTree();
     }
 
-    //更具名称模糊查询省市区
+    //根据名称模糊查询省市区
     @GetMapping("/searchRegionTree")
     public R searchRegionTree(@RequestParam("keyword") @NotBlank String keyword){
         return sysRegionService.searchRegionTree(keyword);
+    }
+
+    //新增省市区
+    @PostMapping("/insertRegion")
+    public R insertRegion(@Validated @RequestBody RegionInsertReqDTO reqDTO){
+        return sysRegionService.insertRegion(reqDTO);
     }
 }
