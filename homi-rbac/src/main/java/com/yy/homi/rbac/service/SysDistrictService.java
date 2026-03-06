@@ -12,10 +12,6 @@ import java.util.Map;
  */
 public interface SysDistrictService extends IService<SysDistrict> {
 
-    /**
-     * 根据城市ID查询区县
-     */
-    List<SysDistrict> findByCityId(Integer cityId);
 
     /**
      * 根据省份ID查询区县
@@ -43,4 +39,6 @@ public interface SysDistrictService extends IService<SysDistrict> {
     boolean batchImport(List<SysDistrict> districtList);
 
     R getIdByDisNameAndCityId(String districtName, Integer cityId);
+
+    R getDistrictsByCityId(Integer cityId);
 }

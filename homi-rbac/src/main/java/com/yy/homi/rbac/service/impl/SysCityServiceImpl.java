@@ -30,11 +30,6 @@ public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> impl
     private final SysCityMapper cityMapper;
 
     @Override
-    public List<SysCity> findByProvinceId(Integer provinceId) {
-        return cityMapper.selectByProvinceId(provinceId);
-    }
-
-    @Override
     public List<SysCity> findByName(String name) {
         return cityMapper.selectByName(name);
     }
@@ -101,5 +96,15 @@ public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> impl
             return R.fail("未查询到城市id");
         }
         return R.ok(sysCity.getId());
+    }
+
+    @Override
+    public R getCitiesByProId(Integer provinceId) {
+
+        if(provinceId == null){
+            return R.fail("provinceId 不能为空！");
+        }
+        List<SysCity> sysCities = cityMapper.selectByProvinceId(provinceId);
+        return R.ok(sysCities);
     }
 }

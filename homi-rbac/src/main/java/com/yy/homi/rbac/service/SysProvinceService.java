@@ -38,4 +38,6 @@ public interface SysProvinceService extends IService<SysProvince> {
     boolean batchImport(List<SysProvince> provinceList);
 
     R getIdByProName(String provinceName);
+
+    R getAllProvinces();
 }

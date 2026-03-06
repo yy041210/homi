@@ -39,5 +39,5 @@ public class SysCity {
 
     // 非数据库字段：该城市下的区县列表
     @TableField(exist = false)
-    private List<SysDistrict> districts;
+    private List<SysDistrict> children;
 }

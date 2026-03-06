@@ -76,7 +76,7 @@ public class SysProvinceServiceImpl extends ServiceImpl<SysProvinceMapper, SysPr
                     .eq(SysDistrict::getStatus, 1)
                     .orderByAsc(SysDistrict::getSort)
                     .list();
-            city.setDistricts(districts); // 需要在SysCity中添加 @TableField(exist=false) 的 districts 字段
+            city.setChildren(districts); // 需要在SysCity中添加 @TableField(exist=false) 的 districts 字段
         }
         
         result.put("cities", cities);
@@ -111,5 +111,11 @@ public class SysProvinceServiceImpl extends ServiceImpl<SysProvinceMapper, SysPr
             return R.fail("未查询到"+provinceName);
         }
         return R.ok(sysProvince.getId());
+    }
+
+    @Override
+    public R getAllProvinces() {
+        List<SysProvince> sysProvinces = provinceMapper.selectList(new LambdaQueryWrapper<SysProvince>().orderByAsc(SysProvince::getSort));
+        return R.ok(sysProvinces);
     }
 }

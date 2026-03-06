@@ -23,4 +23,9 @@ public class SysCityController {
                                      @RequestParam("provinceId") @NotNull Integer provinceId) {
         return sysCityService.getIdByCityNameAndProId(cityName, provinceId);
     }
+
+    @GetMapping("/getCitiesByProId")
+    public R getCitiesByProId(@RequestParam("provinceId") @NotNull Integer provinceId){
+        return sysCityService.getCitiesByProId(provinceId);
+    }
 }

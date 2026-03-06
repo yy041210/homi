@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 省份表实体类
@@ -36,4 +37,7 @@ public class SysProvince {
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
+
+    @TableField(exist = false)
+    List<SysCity> children;
 }

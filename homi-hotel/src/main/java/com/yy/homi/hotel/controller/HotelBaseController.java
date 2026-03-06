@@ -1,12 +1,10 @@
 package com.yy.homi.hotel.controller;
 
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.hotel.domain.dto.HotelBasePageListReqDTO;
 import com.yy.homi.hotel.service.HotelBaseService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -22,5 +20,13 @@ public class HotelBaseController {
         return hotelBaseService.importHotelBaseFromJsonCsv(file);
     }
 
+    /**
+     * 分页查询酒店列表
+     * 请求路径：/hotelbase/pageList
+     */
+    @PostMapping("/pageList")
+    public R pageList(@RequestBody HotelBasePageListReqDTO reqDTO) {
+        return hotelBaseService.selectHotelPage(reqDTO);
+    }
 
 }

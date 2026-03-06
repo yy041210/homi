@@ -12,10 +12,6 @@ import java.util.Map;
  */
 public interface SysCityService extends IService<SysCity> {
 
-    /**
-     * 根据省份ID查询城市
-     */
-    List<SysCity> findByProvinceId(Integer provinceId);
 
     /**
      * 根据名称查询城市
@@ -43,4 +39,6 @@ public interface SysCityService extends IService<SysCity> {
     boolean batchImport(List<SysCity> cityList);
 
     R getIdByCityNameAndProId(String cityName, Integer provinceId);
+
+    R getCitiesByProId(Integer provinceId);
 }

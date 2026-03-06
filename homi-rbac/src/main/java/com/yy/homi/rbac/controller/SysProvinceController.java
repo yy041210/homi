@@ -21,4 +21,9 @@ public class SysProvinceController {
     public R getIdByProName(@RequestParam("provinceName") @NotBlank String provinceName) {
         return sysProvinceService.getIdByProName(provinceName);
     }
+
+    @GetMapping("/getAllProvinces")
+    public R getAllProvinces(){
+        return sysProvinceService.getAllProvinces();
+    }
 }

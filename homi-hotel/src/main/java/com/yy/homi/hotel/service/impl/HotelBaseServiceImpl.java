@@ -7,9 +7,16 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
+import com.baomidou.mybatisplus.core.metadata.TableInfo;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.domain.entity.R; // 假设这是你的返回包装类
 import com.yy.homi.common.domain.to.AddressInfoTO;
+import com.yy.homi.hotel.domain.dto.HotelBasePageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelBase;
 import com.yy.homi.hotel.domain.entity.HotelStats;
 import com.yy.homi.hotel.feign.AmapLocationFeign;
@@ -23,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -95,10 +103,10 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                     hotelStats.setCommentCount(StrUtil.isEmpty(commonCountStr) ? null : Integer.parseInt(commonCountStr));
                     if (commentObj.containsKey("subScore") && commentObj.getJSONArray("subScore").size() > 0) {
                         JSONArray subScore = commentObj.getJSONArray("subScore");
-                            hotelStats.setHygieneScore(subScore.getJSONObject(0).getFloat("number"));
-                            hotelStats.setDeviceScore(subScore.getJSONObject(1).getFloat("number"));
-                            hotelStats.setEnvironmentScore(subScore.getJSONObject(2).getFloat("number"));
-                            hotelStats.setServiceScore(subScore.getJSONObject(3).getFloat("number"));
+                        hotelStats.setHygieneScore(subScore.getJSONObject(0).getFloat("number"));
+                        hotelStats.setDeviceScore(subScore.getJSONObject(1).getFloat("number"));
+                        hotelStats.setEnvironmentScore(subScore.getJSONObject(2).getFloat("number"));
+                        hotelStats.setServiceScore(subScore.getJSONObject(3).getFloat("number"));
 
                     }
                     if (commentObj.containsKey("oneSentenceComment") && commentObj.getJSONArray("oneSentenceComment").size() > 0) {
@@ -194,6 +202,59 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
             log.error("文件导入异常", e);
             return R.fail("导入失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 分页查询酒店列表
+     */
+    public R selectHotelPage(HotelBasePageListReqDTO reqDTO) {
+        // 1. 处理动态排序字符串 (防止 SQL 注入并处理驼峰转换)
+        String orderByClause = "create_time DESC"; // 默认排序字段
+
+        TableInfo tableInfo = TableInfoHelper.getTableInfo(HotelBase.class);
+        if (StrUtil.isNotEmpty(reqDTO.getOrderByColumn()) && tableInfo != null) {
+            // 将前端传来的字段名（可能是驼峰）转为数据库下划线列名
+            String dbColumn = StrUtil.toUnderlineCase(reqDTO.getOrderByColumn());
+
+            // 安全校验：判断该列是否存在于数据库表中
+            boolean isValidField = tableInfo.getFieldList().stream()
+                    .anyMatch(field -> field.getColumn().equals(dbColumn))
+                    || "id".equals(dbColumn)
+                    || "create_time".equals(dbColumn);
+
+            if (isValidField) {
+                // 组装 PageHelper 可识别的排序字符串，例如 "star ASC"
+                orderByClause = dbColumn + (reqDTO.isAsc() ? " ASC" : " DESC");
+            }
+        }
+
+        // 2. 开启分页拦截
+        // PageHelper 会自动将 orderByClause 拼接到 SQL 的末尾
+        PageHelper.startPage(reqDTO.getPageNum(), reqDTO.getPageSize(), orderByClause);
+
+        // 3. 构造业务查询条件
+        LambdaQueryWrapper<HotelBase> queryWrapper = new LambdaQueryWrapper<>();
+
+        // 模糊查询：酒店名称
+        queryWrapper.like(StrUtil.isNotBlank(reqDTO.getName()), HotelBase::getName, reqDTO.getName());
+
+        // 精确匹配：星级、省、市、区
+        queryWrapper.eq(reqDTO.getStar() != null, HotelBase::getStar, reqDTO.getStar());
+        queryWrapper.eq(reqDTO.getProvinceId() != null, HotelBase::getProvinceId, reqDTO.getProvinceId());
+        queryWrapper.eq(reqDTO.getCityId() != null, HotelBase::getCityId, reqDTO.getCityId());
+        queryWrapper.eq(reqDTO.getDistrictId() != null, HotelBase::getDistrictId, reqDTO.getDistrictId());
+
+        // 4. 性能优化：排除大文本字段
+        // 酒店简介 description 字段通常包含大量 HTML 内容，列表页不建议加载
+        queryWrapper.select(HotelBase.class, info -> !info.getColumn().equals("description"));
+
+        // 5. 执行查询
+        // 注意：此时不需要在 queryWrapper 中调用 orderBy 方法，PageHelper 已经处理了排序
+        List<HotelBase> list = this.list(queryWrapper);
+
+        // 6. 封装并返回结果
+        PageInfo<HotelBase> pageInfo = new PageInfo<>(list);
+        return R.ok(pageInfo);
     }
 
 }

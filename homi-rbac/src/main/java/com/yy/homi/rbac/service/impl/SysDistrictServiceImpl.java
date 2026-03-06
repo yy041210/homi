@@ -26,11 +26,6 @@ public class SysDistrictServiceImpl extends ServiceImpl<SysDistrictMapper, SysDi
     private final SysDistrictMapper districtMapper;
 
     @Override
-    public List<SysDistrict> findByCityId(Integer cityId) {
-        return districtMapper.selectByCityId(cityId);
-    }
-
-    @Override
     public List<SysDistrict> findByProvinceId(Integer provinceId) {
         return districtMapper.selectByProvinceId(provinceId);
     }
@@ -79,5 +74,14 @@ public class SysDistrictServiceImpl extends ServiceImpl<SysDistrictMapper, SysDi
             return R.fail("未查询到区域id");
         }
         return R.ok(sysDistrict.getId());
+    }
+
+    @Override
+    public R getDistrictsByCityId(Integer cityId) {
+        if(cityId == null ){
+            return R.fail("cityId 不能为空！");
+        }
+        List<SysDistrict> sysDistricts = districtMapper.selectByCityId(cityId);
+        return R.ok(sysDistricts);
     }
 }

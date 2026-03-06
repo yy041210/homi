@@ -23,4 +23,9 @@ public class SysDistrictController {
                                      @RequestParam("cityId") @NotNull Integer cityId){
         return sysDistrictService.getIdByDisNameAndCityId(districtName,cityId);
     }
+
+    @GetMapping("/getDistrictsByCityId")
+    public R getDistrictsByCityId(@RequestParam("cityId") Integer cityId){
+        return sysDistrictService.getDistrictsByCityId(cityId);
+    }
 }
