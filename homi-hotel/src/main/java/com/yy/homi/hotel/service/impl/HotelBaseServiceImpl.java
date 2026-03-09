@@ -19,9 +19,8 @@ import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.AddressInfoTO;
 import com.yy.homi.hotel.domain.convert.HotelConverter;
 import com.yy.homi.hotel.domain.dto.request.HotelBasePageListReqDTO;
-import com.yy.homi.hotel.domain.entity.HotelAlbum;
-import com.yy.homi.hotel.domain.entity.HotelBase;
-import com.yy.homi.hotel.domain.entity.HotelStats;
+import com.yy.homi.hotel.domain.dto.request.HotelInsertDTO;
+import com.yy.homi.hotel.domain.entity.*;
 import com.yy.homi.hotel.domain.vo.HotelVO;
 import com.yy.homi.hotel.feign.AmapLocationFeign;
 import com.yy.homi.hotel.feign.SysCityFeign;
@@ -30,8 +29,7 @@ import com.yy.homi.hotel.feign.SysProvinceFeign;
 import com.yy.homi.hotel.mapper.HotelAlbumMapper;
 import com.yy.homi.hotel.mapper.HotelBaseMapper;
 import com.yy.homi.hotel.mapper.HotelStatsMapper;
-import com.yy.homi.hotel.service.HotelBaseService;
-import com.yy.homi.hotel.service.HotelStatsService;
+import com.yy.homi.hotel.service.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +48,14 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
 
     @Autowired
     private HotelStatsService hotelStatsService;
+    @Autowired
+    private HotelRoomService hotelRoomService;
+    @Autowired
+    private HotelFacilityService hotelFacilityService;
+    @Autowired
+    private HotelAlbumService hotelAlbumService;
+    @Autowired
+    private HotelSurroundingService hotelSurroundingService;
     @Autowired
     private HotelStatsMapper hotelStatsMapper;
     @Autowired
@@ -357,6 +363,88 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         }
         List<HotelBase> hotelBases = hotelBaseMapper.selectList(new LambdaQueryWrapper<HotelBase>().eq(HotelBase::getProvinceId, provinceId));
         return R.ok(hotelBases);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R saveHotel(HotelInsertDTO req) {
+        // ================== 1. 手动参数校验逻辑 ==================
+        // 校验基础信息
+        HotelBase base = req.getBaseInfo();
+        if (base == null) {
+            return R.fail("酒店基础信息不能为空");
+        }
+        if (StrUtil.isBlank(base.getName())) {
+            return R.fail("酒店名称不能为空");
+        }
+        if (base.getStar() == null || base.getStar() < 1 || base.getStar() > 5) {
+            return R.fail("酒店星级必须在1-5之间");
+        }
+        if (StrUtil.isBlank(base.getAddress())) {
+            return R.fail("酒店地址不能为空");
+        }
+
+        // 校验房型信息
+        List<HotelRoom> rooms = req.getRooms();
+        if (CollectionUtil.isEmpty(rooms)) {
+            return R.fail("至少需要录入一个房型");
+        }
+        for (HotelRoom room : rooms) {
+            if (StrUtil.isBlank(room.getName())) {
+                return R.fail("房型名称不能为空");
+            }
+            if (room.getMaxOccupancy() == null || room.getMaxOccupancy() <= 0) {
+                return R.fail("房型[" + room.getName() + "]的最大入住人数必须大于0");
+            }
+        }
+
+        // 校验相册信息 (可选)
+        List<HotelAlbum> albums = req.getAlbums();
+        if (CollectionUtil.isNotEmpty(albums)) {
+            for (int i = 0; i < albums.size(); i++) {
+                if (StrUtil.isBlank(albums.get(i).getImageUrl())) {
+                    return R.fail("第" + (i + 1) + "张图片地址不能为空");
+                }
+            }
+        }
+
+        //  2. 核心保存逻辑
+        // 保存酒店基础信息 (获取生成的ID)
+        this.save(base);
+        String hotelId = base.getId();
+
+        // 保存统计信息
+        HotelStats stats = req.getStats();
+        if (stats != null) {
+            stats.setHotelId(hotelId);
+            hotelStatsMapper.insert(stats);
+        }
+
+        // 批量保存房型
+        rooms.forEach(r -> r.setHotelId(hotelId));
+        hotelRoomService.saveBatch(rooms);
+
+        // 批量保存设施
+        List<HotelFacility> facilities = req.getFacilities();
+        if (CollectionUtil.isNotEmpty(facilities)) {
+            facilities.forEach(f -> f.setHotelId(hotelId));
+            hotelFacilityService.saveBatch(facilities);
+        }
+
+        // 批量保存相册
+        if (CollectionUtil.isNotEmpty(albums)) {
+            albums.forEach(a -> a.setHotelId(hotelId));
+            hotelAlbumService.saveBatch(albums);
+        }
+
+        // 批量保存周边
+        List<HotelSurrounding> surroundings = req.getSurroundings();
+        if (CollectionUtil.isNotEmpty(surroundings)) {
+            surroundings.forEach(s -> s.setHotelId(hotelId));
+            hotelSurroundingService.saveBatch(surroundings);
+        }
+
+        return R.ok("保存成功！");
     }
 
 }

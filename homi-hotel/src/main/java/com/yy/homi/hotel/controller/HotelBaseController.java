@@ -2,6 +2,7 @@ package com.yy.homi.hotel.controller;
 
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.HotelBasePageListReqDTO;
+import com.yy.homi.hotel.domain.dto.request.HotelInsertDTO;
 import com.yy.homi.hotel.service.HotelBaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -48,4 +49,11 @@ public class HotelBaseController {
     public R getByProvinceId(@RequestParam("provinceId") @NotNull Integer provinceId) {
         return hotelBaseService.getByProvinceId(provinceId);
     }
+
+    @PostMapping("/saveHotel")
+    public R saveHotel(@RequestBody HotelInsertDTO hotelInsertDTO) {
+        // 调用业务层保存酒店完整信息
+        return hotelBaseService.saveHotel(hotelInsertDTO);
+    }
+
 }
