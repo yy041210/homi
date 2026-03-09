@@ -34,4 +34,9 @@ public class SysDistrictController {
         return sysDistrictService.deleteById(districtId);
     }
 
+    @GetMapping("/getInfoById")
+    public R getInfoById(@RequestParam("districtId") @NotNull Integer districtId){
+        return sysDistrictService.getInfoById(districtId);
+    }
+
 }

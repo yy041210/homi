@@ -40,4 +40,9 @@ public class SysCityController {
     public R deleteById(@RequestParam("cityId") @NotNull Integer cityId){
         return sysCityService.deleteById(cityId);
     }
+
+    @GetMapping("/getInfoById")
+    public  R getInfoById(@RequestParam("cityId") @NotNull Integer cityId){
+        return sysCityService.getInfoById(cityId);
+    }
 }

@@ -153,4 +153,16 @@ public class SysProvinceServiceImpl extends ServiceImpl<SysProvinceMapper, SysPr
         provinceMapper.deleteById(provinceId);
         return R.ok("删除成功！");
     }
+
+    @Override
+    public R getInfoById(Integer provinceId) {
+        if(provinceId == null){
+            return R.fail("省编码不能为空！");
+        }
+        SysProvince sysProvince = this.getById(provinceId);
+        if(sysProvince == null){
+            return R.fail("省编码对应的省不存在！");
+        }
+        return R.ok(sysProvince);
+    }
 }

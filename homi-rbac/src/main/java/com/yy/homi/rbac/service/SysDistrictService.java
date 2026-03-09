@@ -39,4 +39,5 @@ public interface SysDistrictService extends IService<SysDistrict> {
 
     R deleteById(Integer districtId);
 
+    R getInfoById(Integer districtId);
 }

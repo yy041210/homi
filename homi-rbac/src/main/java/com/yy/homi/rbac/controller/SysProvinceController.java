@@ -34,4 +34,9 @@ public class SysProvinceController {
     public R deleteById(@RequestParam("provinceId") @NotNull Integer provinceId){
         return sysProvinceService.deleteById(provinceId);
     }
+
+    @GetMapping("/getInfoById")
+    public R getInfoById(@RequestParam("provinceId") @NotNull Integer provinceId){
+        return sysProvinceService.getInfoById(provinceId);
+    }
 }

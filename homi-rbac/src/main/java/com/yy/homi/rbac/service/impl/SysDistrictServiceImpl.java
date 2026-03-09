@@ -106,4 +106,16 @@ public class SysDistrictServiceImpl extends ServiceImpl<SysDistrictMapper, SysDi
         return R.ok("删除成功！");
     }
 
+    @Override
+    public R getInfoById(Integer districtId) {
+        if(districtId == null){
+            return R.fail("县区编码不能为空!");
+        }
+        SysDistrict sysDistrict = this.getById(districtId);
+        if(sysDistrict == null){
+            return R.fail("县区编码对应的县不存在！");
+        }
+        return R.ok(sysDistrict);
+    }
+
 }

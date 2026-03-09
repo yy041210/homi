@@ -33,9 +33,9 @@ import java.util.Map;
 public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> implements SysCityService {
 
     @Autowired
-    private  SysDistrictService districtService;
+    private SysDistrictService districtService;
     @Autowired
-    private  SysCityMapper cityMapper;
+    private SysCityMapper cityMapper;
     @Autowired
     private SysDistrictMapper districtMapper;
     @Autowired
@@ -113,7 +113,7 @@ public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> impl
     @Override
     public R getCitiesByProId(Integer provinceId) {
 
-        if(provinceId == null){
+        if (provinceId == null) {
             return R.fail("provinceId 不能为空！");
         }
         List<SysCity> sysCities = cityMapper.selectByProvinceId(provinceId);
@@ -128,26 +128,38 @@ public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> impl
 
     @Override
     public R deleteById(Integer cityId) {
-        if(cityId == null){
+        if (cityId == null) {
             return R.fail("市编码不能为空！");
         }
         List<SysDistrict> sysDistricts = districtMapper.selectByCityId(cityId);
-        if(CollectionUtil.isNotEmpty(sysDistricts)){
-           return R.fail("当前市有关联的区县，无法删除！");
+        if (CollectionUtil.isNotEmpty(sysDistricts)) {
+            return R.fail("当前市有关联的区县，无法删除！");
         }
 
         R r = hotelBaseFeign.getByCityId(cityId);
-        if(r.getCode() != HttpStatus.OK.value()){
+        if (r.getCode() != HttpStatus.OK.value()) {
             return R.fail("远程查询关联当前市的酒店集合失败！");
         }
 
         List<Object> hotelBases = (List<Object>) r.getData();
 
-        if(CollectionUtil.isNotEmpty(hotelBases)){
+        if (CollectionUtil.isNotEmpty(hotelBases)) {
             return R.fail("当前市有关联的酒店，无法删除！");
         }
 
         cityMapper.deleteById(cityId);
         return R.ok("删除成功！");
+    }
+
+    @Override
+    public R getInfoById(Integer cityId) {
+        if (cityId == null) {
+            return R.fail("市编码不能为空！");
+        }
+        SysCity sysCity = this.getById(cityId);
+        if (sysCity == null) {
+            return R.fail("市编码对应的市不存在！");
+        }
+        return R.ok(sysCity);
     }
 }
