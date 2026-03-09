@@ -1,14 +1,12 @@
 package com.yy.homi.hotel.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.Date;
 import java.util.List;
 
 //房型基本信息表
@@ -31,4 +29,22 @@ public class HotelRoom {
     private String smoke;  // 禁烟 | 可吸烟 | ..
     private Integer maxOccupancy; //最大可住人数
     private String highlightFields; //高亮字段 wifi,window
+    private Integer status;
+
+
+    /** 创建者 */
+    @TableField(fill = FieldFill.INSERT)
+    private String createBy;
+
+    /** 创建时间 */
+    @TableField(fill = FieldFill.INSERT)
+    private Date createTime;
+
+    /** 更新者 */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private String updateBy;
+
+    /** 更新时间 */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private Date updateTime;
 }

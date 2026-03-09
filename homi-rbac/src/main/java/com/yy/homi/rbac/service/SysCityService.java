@@ -47,4 +47,6 @@ public interface SysCityService extends IService<SysCity> {
     R deleteById(Integer cityId);
 
     R getInfoById(Integer cityId);
+
+    R getNamesByIds(List<Integer> cityIds);
 }

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.entity.SysDistrict;
+import com.yy.homi.rbac.domain.entity.SysProvince;
 import com.yy.homi.rbac.feign.HotelBaseFeign;
 import com.yy.homi.rbac.mapper.SysDistrictMapper;
 import com.yy.homi.rbac.service.SysDistrictService;
@@ -17,8 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 区县表 Service 实现类
@@ -116,6 +119,22 @@ public class SysDistrictServiceImpl extends ServiceImpl<SysDistrictMapper, SysDi
             return R.fail("县区编码对应的县不存在！");
         }
         return R.ok(sysDistrict);
+    }
+
+    @Override
+    public R getNamesByIds(List<Integer> districtIds) {
+        if(CollectionUtil.isEmpty(districtIds)){
+            return R.fail("区县编码集合不能为空！");
+        }
+        List<SysDistrict> sysDistricts = districtMapper.selectList(new LambdaQueryWrapper<SysDistrict>().in(SysDistrict::getId, districtIds));
+        if(CollectionUtil.isEmpty(sysDistricts)){
+            return R.ok(new HashMap<>());
+        }
+        Map<Integer, String> result = sysDistricts.stream().collect(Collectors.toMap(
+                SysDistrict::getId,
+                SysDistrict::getName
+        ));
+        return R.ok(result);
     }
 
 }

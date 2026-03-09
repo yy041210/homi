@@ -4,13 +4,11 @@ import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.service.SysProvinceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Validated
 @RestController
@@ -38,5 +36,11 @@ public class SysProvinceController {
     @GetMapping("/getInfoById")
     public R getInfoById(@RequestParam("provinceId") @NotNull Integer provinceId){
         return sysProvinceService.getInfoById(provinceId);
+    }
+
+    //根据ids查询对应的省名
+    @PostMapping("/getNamesByIds")
+    public R getNamesByIds(@RequestBody List<Integer> provinceIds){
+        return sysProvinceService.getNamesByIds(provinceIds);
     }
 }

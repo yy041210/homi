@@ -1,24 +1,32 @@
 package com.yy.homi.hotel.service.impl;
 
 
+import cn.hutool.core.collection.CollStreamUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.convert.Convert;
+import cn.hutool.core.stream.StreamUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.TableInfo;
-import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.AddressInfoTO;
+import com.yy.homi.hotel.domain.convert.HotelConverter;
 import com.yy.homi.hotel.domain.dto.request.HotelBasePageListReqDTO;
+import com.yy.homi.hotel.domain.entity.HotelAlbum;
 import com.yy.homi.hotel.domain.entity.HotelBase;
 import com.yy.homi.hotel.domain.entity.HotelStats;
+import com.yy.homi.hotel.domain.vo.HotelVO;
 import com.yy.homi.hotel.feign.AmapLocationFeign;
+import com.yy.homi.hotel.feign.SysCityFeign;
+import com.yy.homi.hotel.feign.SysDistrictFeign;
+import com.yy.homi.hotel.feign.SysProvinceFeign;
+import com.yy.homi.hotel.mapper.HotelAlbumMapper;
 import com.yy.homi.hotel.mapper.HotelBaseMapper;
 import com.yy.homi.hotel.mapper.HotelStatsMapper;
 import com.yy.homi.hotel.service.HotelBaseService;
@@ -26,14 +34,13 @@ import com.yy.homi.hotel.service.HotelStatsService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -47,7 +54,17 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
     @Autowired
     private HotelBaseMapper hotelBaseMapper;
     @Autowired
+    private HotelAlbumMapper hotelAlbumMapper;
+    @Autowired
     private AmapLocationFeign amapLocationFeign;
+    @Autowired
+    private SysProvinceFeign sysProvinceFeign;
+    @Autowired
+    private SysCityFeign sysCityFeign;
+    @Autowired
+    private SysDistrictFeign sysDistrictFeign;
+    @Autowired
+    private HotelConverter hotelConverter;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -206,54 +223,103 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
     /**
      * 分页查询酒店列表
      */
+    @Override
     public R selectHotelPage(HotelBasePageListReqDTO reqDTO) {
-        // 1. 处理动态排序字符串 (防止 SQL 注入并处理驼峰转换)
-        String orderByClause = "create_time DESC"; // 默认排序字段
+        Integer pageNum = reqDTO.getPageNum();
+        Integer pageSize = reqDTO.getPageSize();
+        String name = reqDTO.getName();
+        Integer star = reqDTO.getStar();
+        Integer status = reqDTO.getStatus();
+        Integer provinceId = reqDTO.getProvinceId();
+        Integer cityId = reqDTO.getCityId();
+        Integer districtId = reqDTO.getDistrictId();
+        Date beginTime = reqDTO.getBeginTime();
+        Date endTime = reqDTO.getEndTime();
 
-        TableInfo tableInfo = TableInfoHelper.getTableInfo(HotelBase.class);
-        if (StrUtil.isNotEmpty(reqDTO.getOrderByColumn()) && tableInfo != null) {
-            // 将前端传来的字段名（可能是驼峰）转为数据库下划线列名
-            String dbColumn = StrUtil.toUnderlineCase(reqDTO.getOrderByColumn());
+        PageHelper.startPage(pageNum, pageSize);
 
-            // 安全校验：判断该列是否存在于数据库表中
-            boolean isValidField = tableInfo.getFieldList().stream()
-                    .anyMatch(field -> field.getColumn().equals(dbColumn))
-                    || "id".equals(dbColumn)
-                    || "create_time".equals(dbColumn);
+        List<HotelBase> hotelBases = hotelBaseMapper.selectHotelList(name, star, status, provinceId, cityId, districtId, beginTime, endTime);
 
-            if (isValidField) {
-                // 组装 PageHelper 可识别的排序字符串，例如 "star ASC"
-                orderByClause = dbColumn + (reqDTO.isAsc() ? " ASC" : " DESC");
-            }
+        List<HotelVO> hotelVOS = hotelConverter.listEntityToVo(hotelBases);
+
+        //收集酒店ids和省市区ids
+        Set<String> hotelIds = hotelVOS.stream().map(HotelVO::getId).collect(Collectors.toSet());
+        Set<Integer> provinceIds = hotelVOS.stream().map(HotelVO::getProvinceId).collect(Collectors.toSet());
+        Set<Integer> cityIds = hotelVOS.stream().map(HotelVO::getCityId).collect(Collectors.toSet());
+        Set<Integer> districtIds = hotelVOS.stream().map(HotelVO::getDistrictId).collect(Collectors.toSet());
+
+        //查询省市区的名称
+        R provinceNamesR = sysProvinceFeign.getNamesByIds(new ArrayList<>(provinceIds));
+        R cityNamesR = sysCityFeign.getNamesByIds(new ArrayList<>(cityIds));
+        R districtNamesR = sysDistrictFeign.getNamesByIds(new ArrayList<>(districtIds));
+
+        if(provinceNamesR.getCode() != HttpStatus.OK.value() || cityNamesR.getCode() != HttpStatus.OK.value() || districtNamesR.getCode() != HttpStatus.OK.value() ){
+            return R.fail("远程调用查询地址信息错误!");
         }
+        // 这样转换后，Map 里的 Key 就真的变成 Integer 了
+        Map<Integer, String> provinceNameMap = Convert.toMap(Integer.class, String.class, provinceNamesR.getData());
+        Map<Integer, String> cityNameMap = Convert.toMap(Integer.class, String.class, cityNamesR.getData());
+        Map<Integer, String> districtNameMap = Convert.toMap(Integer.class, String.class, districtNamesR.getData());
 
-        // 2. 开启分页拦截
-        // PageHelper 会自动将 orderByClause 拼接到 SQL 的末尾
-        PageHelper.startPage(reqDTO.getPageNum(), reqDTO.getPageSize(), orderByClause);
 
-        // 3. 构造业务查询条件
-        LambdaQueryWrapper<HotelBase> queryWrapper = new LambdaQueryWrapper<>();
+        //查询酒店5张封面图
+        List<HotelAlbum> hotelAlbums = hotelAlbumMapper.selectTop5PhotosBatch(new ArrayList<>(hotelIds));
+        Map<String, List<String>> picMap = hotelAlbums.stream()
+                .collect(Collectors.groupingBy(
+                        HotelAlbum::getHotelId,
+                        Collectors.mapping(HotelAlbum::getImageUrl, Collectors.toList())
+                ));
 
-        // 模糊查询：酒店名称
-        queryWrapper.like(StrUtil.isNotBlank(reqDTO.getName()), HotelBase::getName, reqDTO.getName());
 
-        // 精确匹配：星级、省、市、区
-        queryWrapper.eq(reqDTO.getStar() != null, HotelBase::getStar, reqDTO.getStar());
-        queryWrapper.eq(reqDTO.getProvinceId() != null, HotelBase::getProvinceId, reqDTO.getProvinceId());
-        queryWrapper.eq(reqDTO.getCityId() != null, HotelBase::getCityId, reqDTO.getCityId());
-        queryWrapper.eq(reqDTO.getDistrictId() != null, HotelBase::getDistrictId, reqDTO.getDistrictId());
+        //查询关联的hotelStats
+        List<HotelStats> hotelStatsList = hotelStatsMapper.selectList(new LambdaQueryWrapper<HotelStats>().in(HotelStats::getHotelId, hotelIds));
+        Map<String, HotelStats> statsMap = CollStreamUtil.toIdentityMap(hotelStatsList, HotelStats::getHotelId);
 
-        // 4. 性能优化：排除大文本字段
-        // 酒店简介 description 字段通常包含大量 HTML 内容，列表页不建议加载
-        queryWrapper.select(HotelBase.class, info -> !info.getColumn().equals("description"));
+        //封装返回数据
+        hotelVOS.forEach(hotelVO -> {
+            String hotelId = hotelVO.getId();
+            Integer pId = hotelVO.getProvinceId();
+            Integer cId = hotelVO.getCityId();
+            Integer dId = hotelVO.getDistrictId();
+            //省市区名
+            List<String> regionPathList = new ArrayList<>();
+            if(pId != null && provinceNameMap.get(pId) != null){
+                hotelVO.setProvinceName(provinceNameMap.get(pId));
+                regionPathList.add(provinceNameMap.get(pId));
+            }
+            if(cId != null && cityNameMap.get(cId) != null){
+                hotelVO.setCityName(cityNameMap.get(cId));
+                regionPathList.add(cityNameMap.get(cId));
+            }
+            if(dId != null && districtNameMap.get(dId) != null){
+                hotelVO.setDistrictName(districtNameMap.get(dId));
+                regionPathList.add(districtNameMap.get(dId));
+            }
+            String regionPath = StrUtil.join("/", regionPathList);
+            hotelVO.setRegionPath(regionPath);
 
-        // 5. 执行查询
-        // 注意：此时不需要在 queryWrapper 中调用 orderBy 方法，PageHelper 已经处理了排序
-        List<HotelBase> list = this.list(queryWrapper);
+            //5张封面图
+            hotelVO.setPicUrls(picMap.get(hotelId) == null ? new ArrayList<>() : picMap.get(hotelId));
 
-        // 6. 封装并返回结果
-        PageInfo<HotelBase> pageInfo = new PageInfo<>(list);
-        return R.ok(pageInfo);
+            //hotelStats相关字段
+            HotelStats hotelStats = statsMap.get(hotelId);
+            if(hotelStats != null){
+                hotelVO.setMinPrice(hotelStats.getMinPrice());
+                hotelVO.setCommentScore(hotelStats.getCommentScore());
+                hotelVO.setCommentCount(hotelStats.getCommentCount());
+                hotelVO.setCommentDescription(hotelStats.getCommentDescription());
+                hotelVO.setTagTitle(hotelStats.getTagTitle());
+                hotelVO.setHygieneScore(hotelStats.getHygieneScore());
+                hotelVO.setEnvironmentScore(hotelStats.getEnvironmentScore());
+                hotelVO.setServiceScore(hotelStats.getServiceScore());
+                hotelVO.setDeviceScore(hotelStats.getDeviceScore());
+            }
+
+        });
+
+        PageInfo<HotelVO> hotelVOPageInfo = new PageInfo<>(hotelVOS);
+
+        return R.ok(hotelVOPageInfo);
     }
 
 

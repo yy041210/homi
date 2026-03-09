@@ -30,6 +30,8 @@ public class HotelBase {
     private Double lat; //纬度
     private Double lng; //经度
 
+    private Integer status;
+
 
     /** 创建者 */
     @TableField(fill = FieldFill.INSERT)

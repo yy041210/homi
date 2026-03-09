@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotNull;
-import java.util.List;
+
 
 @Validated
 @RestController
@@ -21,7 +21,7 @@ public class HotelBaseController {
 
 
     @PostMapping("/importHotelBaseFromJsonCsv")
-    public R importHotelBaseFromJsonCsv(@RequestParam("file")MultipartFile file){
+    public R importHotelBaseFromJsonCsv(@RequestParam("file") MultipartFile file) {
         return hotelBaseService.importHotelBaseFromJsonCsv(file);
     }
 
@@ -35,16 +35,17 @@ public class HotelBaseController {
     }
 
     @GetMapping("/getByDistrictId")
-    public R getByDistrictId(@RequestParam("districtId") @NotNull Integer districtId){
+    public R getByDistrictId(@RequestParam("districtId") @NotNull Integer districtId) {
         return hotelBaseService.getByDistrictId(districtId);
     }
 
     @GetMapping("/getByCityId")
-    public R getByCityId(@RequestParam("cityId") @NotNull Integer cityId){
+    public R getByCityId(@RequestParam("cityId") @NotNull Integer cityId) {
         return hotelBaseService.getByCityId(cityId);
     }
+
     @GetMapping("/getByProvinceId")
-    public R getByProvinceId(@RequestParam("provinceId") @NotNull Integer provinceId){
+    public R getByProvinceId(@RequestParam("provinceId") @NotNull Integer provinceId) {
         return hotelBaseService.getByProvinceId(provinceId);
     }
 }

@@ -44,4 +44,6 @@ public interface SysProvinceService extends IService<SysProvince> {
     R deleteById(Integer provinceId);
 
     R getInfoById(Integer provinceId);
+
+    R getNamesByIds(List<Integer> provinceIds);
 }

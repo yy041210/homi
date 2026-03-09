@@ -3,17 +3,37 @@
 <mapper namespace="com.yy.homi.hotel.mapper.HotelAlbumMapper">
 
     <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelAlbum">
-        <id column="id" property="id" />
-        <result column="hotel_id" property="hotelId" />
-        <result column="room_id" property="roomId" />
-        <result column="user_id" property="userId" />
-        <result column="seq" property="seq" />
-        <result column="source" property="source" />
-        <result column="category" property="category" />
-        <result column="image_id" property="imageId" />
-        <result column="image_url" property="imageUrl" />
-        <result column="create_by" property="createBy" />
-        <result column="create_time" property="createTime" />
+        <id column="id" property="id"/>
+        <result column="hotel_id" property="hotelId"/>
+        <result column="room_id" property="roomId"/>
+        <result column="user_id" property="userId"/>
+        <result column="seq" property="seq"/>
+        <result column="source" property="source"/>
+        <result column="category" property="category"/>
+        <result column="image_id" property="imageId"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
     </resultMap>
+
+    <select id="selectTop5PhotosBatch" resultType="com.yy.homi.hotel.domain.entity.HotelAlbum">
+        SELECT * FROM (
+        SELECT
+        id,
+        hotel_id,
+        image_url,
+        seq,
+        -- 根据酒店分组，并按排序字段升序排列
+        ROW_NUMBER() OVER(PARTITION BY hotel_id ORDER BY seq ASC) as rn
+        FROM hotel_album
+        WHERE hotel_id IN
+        <foreach collection="hotelIds" item="hotelId" open="(" separator="," close=")">
+            #{hotelId}
+        </foreach>
+        -- 核心过滤条件
+        AND source = 1 AND room_id IS NULL AND category = 1 ) temp
+        WHERE rn &lt;= 5 ORDER BY hotel_id, seq ASC
+    </select>
+
 
 </mapper>

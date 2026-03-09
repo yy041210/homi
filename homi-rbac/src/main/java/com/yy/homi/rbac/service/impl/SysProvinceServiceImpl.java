@@ -14,7 +14,6 @@ import com.yy.homi.rbac.mapper.SysProvinceMapper;
 import com.yy.homi.rbac.service.SysCityService;
 import com.yy.homi.rbac.service.SysDistrictService;
 import com.yy.homi.rbac.service.SysProvinceService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 省份表 Service 实现类
@@ -39,7 +39,7 @@ public class SysProvinceServiceImpl extends ServiceImpl<SysProvinceMapper, SysPr
     @Autowired
     private  SysProvinceMapper provinceMapper;
     @Autowired
-    private SysCityMapper sysCityMapper;
+    private SysCityMapper cityMapper;
     @Autowired
     private HotelBaseFeign hotelBaseFeign;
 
@@ -137,7 +137,7 @@ public class SysProvinceServiceImpl extends ServiceImpl<SysProvinceMapper, SysPr
             return  R.fail("省编码不能为空！");
         }
 
-        List<SysCity> sysCities = sysCityMapper.selectByProvinceId(provinceId);
+        List<SysCity> sysCities = cityMapper.selectByProvinceId(provinceId);
         if(CollectionUtil.isNotEmpty(sysCities)){
             return R.fail("当前省有关联的市，无法删除！");
         }
@@ -164,5 +164,21 @@ public class SysProvinceServiceImpl extends ServiceImpl<SysProvinceMapper, SysPr
             return R.fail("省编码对应的省不存在！");
         }
         return R.ok(sysProvince);
+    }
+
+    @Override
+    public R getNamesByIds(List<Integer> provinceIds) {
+        if(CollectionUtil.isEmpty(provinceIds)){
+            return R.fail("省编码集合不能为空！");
+        }
+        List<SysProvince> sysProvinces = provinceMapper.selectList(new LambdaQueryWrapper<SysProvince>().in(SysProvince::getId, provinceIds));
+        if(CollectionUtil.isEmpty(sysProvinces)){
+            return R.ok(new HashMap<>());
+        }
+        Map<Integer, String> result = sysProvinces.stream().collect(Collectors.toMap(
+                SysProvince::getId,
+                SysProvince::getName
+        ));
+        return R.ok(result);
     }
 }

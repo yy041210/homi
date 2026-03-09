@@ -39,4 +39,10 @@ public class SysDistrictController {
         return sysDistrictService.getInfoById(districtId);
     }
 
+
+    @PostMapping("/getNamesByIds")
+    public R getNamesByIds(@RequestBody List<Integer> districtIds){
+        return sysDistrictService.getNamesByIds(districtIds);
+    }
+
 }

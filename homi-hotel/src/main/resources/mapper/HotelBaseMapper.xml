@@ -17,6 +17,7 @@
         <result column="address" property="address"/>
         <result column="lat" property="lat"/>
         <result column="lng" property="lng"/>
+        <result column="status" property="status"/>
         <result column="create_by" property="createBy"/>
         <result column="create_time" property="createTime"/>
         <result column="update_by" property="updateBy"/>
@@ -26,7 +27,66 @@
     <sql id="Base_Column_List">
         id
         , name, name_en, star, open_year, room_count, phone, description,
-        province_id, city_id, district_id, address, lat, lng, create_by, create_time, update_by, update_time
+        province_id, city_id, district_id, address, lat, lng,status, create_by, create_time, update_by, update_time
     </sql>
+
+    <select id="selectHotelList" resultType="com.yy.homi.hotel.domain.entity.HotelBase">
+        SELECT
+        id,
+        name,
+        name_en,
+        star,
+        open_year,
+        room_count,
+        phone,
+        description,
+        province_id,
+        city_id,
+        district_id,
+        address,
+        lat,
+        lng,
+        status,
+        create_by,
+        create_time,
+        update_by,
+        update_time
+        FROM hotel_base
+        <where>
+            <if test="name != null and name != ''">
+                AND (
+                name LIKE CONCAT('%', #{name}, '%')
+                OR
+                name_en LIKE CONCAT('%', #{name}, '%')
+                )
+            </if>
+
+            <if test="star != null">
+                AND star = #{star}
+            </if>
+
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+
+            <if test="provinceId != null">
+                AND province_id = #{provinceId}
+            </if>
+            <if test="cityId != null">
+                AND city_id = #{cityId}
+            </if>
+            <if test="districtId != null">
+                AND district_id = #{districtId}
+            </if>
+
+            <if test="beginTime != null">
+                AND create_time &gt;= #{beginTime}
+            </if>
+            <if test="endTime != null">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
 
 </mapper>

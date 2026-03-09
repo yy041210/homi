@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.entity.SysCity;
 import com.yy.homi.rbac.domain.entity.SysDistrict;
+import com.yy.homi.rbac.domain.entity.SysProvince;
 import com.yy.homi.rbac.feign.HotelBaseFeign;
 import com.yy.homi.rbac.mapper.SysCityMapper;
 import com.yy.homi.rbac.mapper.SysDistrictMapper;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 城市表 Service 实现类
@@ -161,5 +163,21 @@ public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> impl
             return R.fail("市编码对应的市不存在！");
         }
         return R.ok(sysCity);
+    }
+
+    @Override
+    public R getNamesByIds(List<Integer> cityIds) {
+        if(CollectionUtil.isEmpty(cityIds)){
+            return R.fail("省编码集合不能为空！");
+        }
+        List<SysCity> sysCities = cityMapper.selectList(new LambdaQueryWrapper<SysCity>().in(SysCity::getId, cityIds));
+        if(CollectionUtil.isEmpty(sysCities)){
+            return R.ok(new HashMap<>());
+        }
+        Map<Integer, String> result = sysCities.stream().collect(Collectors.toMap(
+                SysCity::getId,
+                SysCity::getName
+        ));
+        return R.ok(result);
     }
 }
