@@ -57,6 +57,13 @@ spring:
             - Path= /api/homi-third-party/**
           filters:
             - StripPrefix=1
+        #酒店
+        - id: homi-hotel-route
+          uri: lb://homi-hotel
+          predicates:
+            - Path= /api/homi-hotel/**
+          filters:
+            - StripPrefix=1
 
 # 日志配置
 logging:

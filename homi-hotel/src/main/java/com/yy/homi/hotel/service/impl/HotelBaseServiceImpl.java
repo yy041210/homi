@@ -1,6 +1,7 @@
 package com.yy.homi.hotel.service.impl;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollStreamUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
@@ -239,6 +240,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         PageHelper.startPage(pageNum, pageSize);
 
         List<HotelBase> hotelBases = hotelBaseMapper.selectHotelList(name, star, status, provinceId, cityId, districtId, beginTime, endTime);
+        PageInfo<HotelBase> basePageInfo = new PageInfo<>(hotelBases);
 
         List<HotelVO> hotelVOS = hotelConverter.listEntityToVo(hotelBases);
 
@@ -247,6 +249,10 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         Set<Integer> provinceIds = hotelVOS.stream().map(HotelVO::getProvinceId).collect(Collectors.toSet());
         Set<Integer> cityIds = hotelVOS.stream().map(HotelVO::getCityId).collect(Collectors.toSet());
         Set<Integer> districtIds = hotelVOS.stream().map(HotelVO::getDistrictId).collect(Collectors.toSet());
+
+        if(CollectionUtil.isEmpty(hotelIds)){
+            return R.ok(new ArrayList<>());
+        }
 
         //查询省市区的名称
         R provinceNamesR = sysProvinceFeign.getNamesByIds(new ArrayList<>(provinceIds));
@@ -317,8 +323,10 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
 
         });
 
-        PageInfo<HotelVO> hotelVOPageInfo = new PageInfo<>(hotelVOS);
-
+        // 4. 创建最终的 VO 分页对象，并从 basePageInfo 复制分页元数据
+        PageInfo<HotelVO> hotelVOPageInfo = new PageInfo<>();
+        BeanUtil.copyProperties(basePageInfo, hotelVOPageInfo, "list"); // 拷贝分页属性，排除旧的 list
+        hotelVOPageInfo.setList(hotelVOS); // 设置填充好数据的 VO 列表
         return R.ok(hotelVOPageInfo);
     }
 
