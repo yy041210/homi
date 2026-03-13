@@ -1,0 +1,66 @@
+PUT /hotel
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "text_analyzer": {
+          "tokenizer": "ik_max_word",
+          "filter": ["py"]
+        },
+        "completion_analyzer": {
+          "tokenizer": "keyword",
+          "filter": ["py"]
+        }
+      },
+      "filter": {
+        "py": {
+          "type": "pinyin",
+          "keep_full_pinyin": false,
+          "keep_joined_full_pinyin": true,
+          "keep_original": true,
+          "limit_first_letter_self_log": true,
+          "remove_duplicated_term": true,
+          "none_chinese_pinyin_tokenize": false
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": { "type": "keyword" },
+      "name": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "copy_to": "all"
+      },
+      "nameEn": { "type": "text", "copy_to": "all" },
+      "star": { "type": "integer" },
+      "address": { "type": "keyword", "index": false },
+      "phone": { "type": "keyword", "index": false },
+      "description": {
+        "type": "text",
+        "analyzer": "ik_smart",
+        "copy_to": "all"
+      },
+      "commentScore": { "type": "float" },
+      "commentCount": { "type": "integer" },
+      "minPrice": { "type": "integer" },
+      "tagTitle": { "type": "keyword" },
+      "cityId": { "type": "integer" },
+      "location": { "type": "geo_point" },
+      "picUrl": { "type": "keyword", "index": false },
+      "facilities": { "type": "keyword" },
+      "roomTypes": { "type": "keyword" },
+      "surroundings": { "type": "keyword" },
+      "popularityScore": { "type": "double" },
+      "suggestion": {
+        "type": "completion",
+        "analyzer": "completion_analyzer"
+      },
+      "all": {
+        "type": "text",
+        "analyzer": "ik_max_word"
+      }
+    }
+  }
+}
