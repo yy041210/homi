@@ -1,5 +1,6 @@
 package com.yy.homi.hotel.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.HotelImportTaskPageListReqDTO;
 import com.yy.homi.hotel.service.HotelImportTaskService;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
@@ -41,10 +43,25 @@ public class HotelImportTaskController {
 
     @Operation(summary = "批量获取任务详情")
     @PostMapping("/getImportTaskByIds")
-    public R getImportTaskByIds(@Validated @RequestBody @NotNull List<String> ids) {
+    public R getImportTaskByIds(@Validated @RequestBody @NotEmpty(message = "ids不能为空") List<String> ids) {
         // 直接透传 Service 返回的 R
         return hotelImportTaskService.getImportTaskByIds(ids);
     }
 
+    @Operation(summary = "根据ids批量删除任务")
+    @PostMapping("/deleteByIds")
+    public R deleteByIds(@Validated @RequestBody @NotEmpty(message = "ids不能为空") List<String> ids ){
+        hotelImportTaskService.removeBatchByIds(ids);
+        return R.ok();
+    }
+
+    @Operation(summary = "根据id删除任务")
+    @GetMapping("/deleteById")
+    public R deleteByIds(@RequestParam("id") @NotBlank(message = "任务id不能为空！") String id){
+        if(StrUtil.isNotBlank(id)){
+            hotelImportTaskService.removeById(id);
+        }
+        return R.ok("删除成功！");
+    }
 
 }
