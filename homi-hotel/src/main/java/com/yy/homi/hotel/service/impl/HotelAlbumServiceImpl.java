@@ -153,7 +153,7 @@ public class HotelAlbumServiceImpl extends ServiceImpl<HotelAlbumMapper, HotelAl
                             HotelAlbum album = new HotelAlbum();
                             album.setHotelId(hotelId);
                             album.setRoomId(null);
-                            album.setUserId(null);
+                            album.setCommentId(null);
                             album.setSeq(seq);
                             album.setSource(source);
                             album.setCategory(category);

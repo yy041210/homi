@@ -6,7 +6,7 @@
         <id column="id" property="id"/>
         <result column="hotel_id" property="hotelId"/>
         <result column="room_id" property="roomId"/>
-        <result column="user_id" property="userId"/>
+        <result column="comment_id" property="commentId"/>
         <result column="seq" property="seq"/>
         <result column="source" property="source"/>
         <result column="category" property="category"/>

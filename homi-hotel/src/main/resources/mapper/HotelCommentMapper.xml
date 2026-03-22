@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.hotel.mapper.HotelCommentMapper">
+
+    <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelComment">
+        <id column="id" property="id" />
+        <result column="hotel_id" property="hotelId" />
+        <result column="user_id" property="userId" />
+        <result column="user_name" property="userName" />
+        <result column="comment_score" property="commentScore" />
+        <result column="hygiene_score" property="hygieneScore" />
+        <result column="device_score" property="deviceScore" />
+        <result column="environment_score" property="environmentScore" />
+        <result column="service_score" property="serviceScore" />
+        <result column="content_context" property="commentContext" />
+        <result column="room_id" property="roomId" />
+        <result column="room_name" property="roomName" />
+        <result column="travel_type" property="travelType" />
+        <result column="like_count" property="likeCount" />
+        <result column="check_in_time" property="checkInTime" />
+        <result column="publish_time" property="publishTime" />
+    </resultMap>
+
+
+</mapper>

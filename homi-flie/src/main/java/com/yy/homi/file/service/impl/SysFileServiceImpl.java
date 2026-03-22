@@ -247,10 +247,13 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         ConcurrentHashMap<String, String> successMap = new ConcurrentHashMap<>();
 
         //存入sys_file
-        List<SysFile> sysFiles = new ArrayList<>();
+        List<SysFile> sysFiles = Collections.synchronizedList(new ArrayList<>());
         Map<String, String> result = new HashMap<>(); // k: url ,v : fileId
-        //查询所有文件
-        Map<String, String> hashIdMap = sysFileMapper.selectList(null).stream().collect(Collectors.toMap(SysFile::getFileHash, SysFile::getId));
+        //查询所有文件(逻辑 sha256＋文件后缀唯一)
+        Map<String, String> hashIdExtensionMap = sysFileMapper.selectList(null).stream().collect(Collectors.toMap(
+                sysFile -> sysFile.getFileHash()+sysFile.getExtension(),
+                SysFile::getId)
+        );
 
         // 存储失败的URL及错误信息
         ConcurrentHashMap<String, String> errorMap = new ConcurrentHashMap<>();
@@ -261,7 +264,8 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
                 URLConnection urlConnection = imageUrl.openConnection();
                 InputStream is = urlConnection.getInputStream();
                 String sha256 = FileUtils.getSha256(is);
-                String imageId = hashIdMap.get(sha256);
+                String fileExtension = FileUtils.getFileExtension(url);
+                String imageId = hashIdExtensionMap.get(sha256+fileExtension);
                 //校验数据库是否有相同文件
                 if (imageId != null) {
                     result.put(url, imageId);
@@ -271,7 +275,7 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
                     sysFile.setFileName(split[split.length - 1]);
                     sysFile.setFileHash(sha256);
                     sysFile.setUrl(url);
-                    sysFile.setExtension("jpg");
+                    sysFile.setExtension(fileExtension);
                     sysFile.setSize(urlConnection.getContentLengthLong());
                     sysFile.setDelFlag(CommonConstants.DEL_NORMAL);
                     sysFiles.add(sysFile);
@@ -291,22 +295,21 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         }
 
 
-
-        successMap.forEach((k, v) -> {
-            //校验数据库是否有相同文件
-            if (hashIdMap.get(v) != null) {
-                result.put(k, hashIdMap.get(v));
-            } else {
-                SysFile sysFile = new SysFile();
-                String[] split = k.split("/");
-                sysFile.setFileName(split[split.length - 1]);
-                sysFile.setFileHash(v);
-                sysFile.setUrl(k);
-                sysFile.setExtension("jpg");
-                sysFile.setDelFlag(CommonConstants.DEL_NORMAL);
-                sysFiles.add(sysFile);
-            }
-        });
+//        successMap.forEach((k, v) -> {
+//            //校验数据库是否有相同文件
+//            if (hashIdMap.get(v) != null) {
+//                result.put(k, hashIdMap.get(v));
+//            } else {
+//                SysFile sysFile = new SysFile();
+//                String[] split = k.split("/");
+//                sysFile.setFileName(split[split.length - 1]);
+//                sysFile.setFileHash(v);
+//                sysFile.setUrl(k);
+//                sysFile.setExtension("jpg");
+//                sysFile.setDelFlag(CommonConstants.DEL_NORMAL);
+//                sysFiles.add(sysFile);
+//            }
+//        });
 
         if(CollectionUtil.isNotEmpty(sysFiles)){
             this.saveBatch(sysFiles);
