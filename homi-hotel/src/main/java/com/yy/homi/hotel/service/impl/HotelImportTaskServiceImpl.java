@@ -1,13 +1,17 @@
 package com.yy.homi.hotel.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.text.csv.CsvData;
 import cn.hutool.core.text.csv.CsvReader;
 import cn.hutool.core.text.csv.CsvUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.utils.IdUtils;
+import com.yy.homi.hotel.domain.dto.request.HotelImportTaskPageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelImportTask;
 import com.yy.homi.hotel.mapper.HotelImportTaskMapper;
 import com.yy.homi.hotel.service.HotelImportTaskService;
@@ -20,6 +24,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Slf4j
@@ -82,7 +88,7 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
         if ((lineCount - 1) <= 0) {
             destFile.delete();
             return R.fail("csv文件中无数据！");
-        }else{
+        } else {
             //判断csv格式
             // 1. 创建 CsvReader（指定 GBK 编码解决你之前的报错）
             CsvReader reader = CsvUtil.getReader();
@@ -97,7 +103,7 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                         return R.fail("csv文件格式不正确！");
                     }
                 }
-            } else if(taskType.equals("HOTEL_ROOM")){
+            } else if (taskType.equals("HOTEL_ROOM")) {
                 //酒店基本房型，12列
                 // 2. 只读取文件头
                 CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
@@ -119,7 +125,7 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                         return R.fail("csv文件格式不正确！");
                     }
                 }
-            }else if (taskType.equals("HOTEL_COMMENT")) {
+            } else if (taskType.equals("HOTEL_COMMENT")) {
                 //酒店评论相关内容，12列
                 // 2. 只读取文件头
                 CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
@@ -148,5 +154,39 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
         hotelImportTaskStrategyContext.execute(taskId, realFilePath, taskType);
 
         return R.ok(taskId);
+    }
+
+    @Override
+    public R pageList(HotelImportTaskPageListReqDTO req) {
+        // 1. 开启分页 (PageHelper 必须在查询前调用)
+        PageHelper.startPage(req.getPageNo(), req.getPageSize());
+
+        // 2. 调用 Mapper，传入离散参数
+        List<HotelImportTask> list = hotelImportTaskMapper
+                .selectTaskList(
+                        req.getTaskName(),
+                        req.getTaskType(),
+                        req.getStatus(),
+                        req.getBeginTime(),
+                        req.getEndTime()
+                );
+
+        // 3. 包装原始分页结果（为了获取 Total 等信息）
+        PageInfo<HotelImportTask> pageInfo = new PageInfo<>(list);
+
+        // 返回无泛型的 R
+        return R.ok(pageInfo);
+    }
+
+    @Override
+    public R getImportTaskByIds(List<String> ids) {
+        // 集合为空直接返回
+        if (CollUtil.isEmpty(ids)) {
+            return R.ok(new ArrayList<HotelImportTask>());
+        }
+
+        List<HotelImportTask> taskList = hotelImportTaskMapper.selectImportTaskByIds(ids);
+
+        return R.ok(taskList);
     }
 }

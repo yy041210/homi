@@ -13,6 +13,17 @@ import java.util.Map;
 @Mapper
 public interface HotelImportTaskMapper extends BaseMapper<HotelImportTask> {
 
+    /**
+     * 动态 SQL 查询任务列表
+     */
+    List<HotelImportTask> selectTaskList(
+            @Param("taskName") String taskName,
+            @Param("taskType") String taskType,
+            @Param("status") Integer status,
+            @Param("startTime") Date startTime,
+            @Param("endTime") Date endTime
+    );
+
     void incrementProcessedCount(@Param("taskId") String taskId, @Param("increment") int increment);
 
     @Update("update hotel_import_task set status = #{status}, update_time = NOW() where id = #{taskId} ")
@@ -53,4 +64,9 @@ public interface HotelImportTaskMapper extends BaseMapper<HotelImportTask> {
 
     // 更新
     int updateTask(HotelImportTask task);
+
+    /**
+     * 批量查询任务进度信息
+     */
+    List<HotelImportTask> selectImportTaskByIds(@Param("ids") List<String> ids);
 }

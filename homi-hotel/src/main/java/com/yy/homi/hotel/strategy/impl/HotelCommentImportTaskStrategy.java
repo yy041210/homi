@@ -1,5 +1,6 @@
 package com.yy.homi.hotel.strategy.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
@@ -164,7 +165,7 @@ public class HotelCommentImportTaskStrategy implements HotelImportTaskStrategy {
                                     continue;
                                 }
                                 String roomId = allRoomHotelIdNameMap.get(hotelId + roomName);
-                                if(StrUtil.isEmpty(roomId)){
+                                if (StrUtil.isEmpty(roomId)) {
                                     log.warn("房间id为空！");
                                     continue;
                                 }
@@ -201,7 +202,7 @@ public class HotelCommentImportTaskStrategy implements HotelImportTaskStrategy {
                                     // 使用 Hutool 的 StrUtil.split 可以自动去空格和过滤空值
                                     List<String> list = StrUtil.split(imageUrls, '|', true, true);
                                     for (String imageUrl : list) {
-                                        if(saveFileUrls.add(imageUrl)){
+                                        if (saveFileUrls.add(imageUrl)) {
                                             HotelAlbum hotelAlbum = new HotelAlbum();
                                             hotelAlbum.setHotelId(hotelId);
                                             hotelAlbum.setCommentId(id);
@@ -219,7 +220,7 @@ public class HotelCommentImportTaskStrategy implements HotelImportTaskStrategy {
                                     // 使用 Hutool 的 StrUtil.split 可以自动去空格和过滤空值
                                     List<String> list = StrUtil.split(videoUrls, '|', true, true);
                                     for (String videoUrl : list) {
-                                        if(saveFileUrls.add(videoUrl)){
+                                        if (saveFileUrls.add(videoUrl)) {
                                             HotelAlbum hotelAlbum = new HotelAlbum();
                                             hotelAlbum.setHotelId(hotelId);
                                             hotelAlbum.setCommentId(id);
@@ -238,15 +239,21 @@ public class HotelCommentImportTaskStrategy implements HotelImportTaskStrategy {
                             }
 
                             //通过urls保存文件
-                            R r = sysFileFeign.uploadBatchByUrls(new ArrayList<>(saveFileUrls));
-                            if (r.getCode() != HttpStatus.OK.value()) {
-                                throw new ServiceException("远程调用文件服务，通过urls保存sysFile失败！");
+                            Map<String, String> result = new HashMap<>();
+                            if (CollectionUtil.isNotEmpty(saveFileUrls)) {
+                                R r = sysFileFeign.uploadBatchByUrls(new ArrayList<>(saveFileUrls));
+                                if (r.getCode() != HttpStatus.OK.value()) {
+                                    hotelImportTaskMapper.updateToFailed(taskId,HotelImportTask.STATUS_FAILED,"远程调用homi-file失败！错误信息："+r.getMsg());
+                                    throw new ServiceException("远程调用文件服务，通过urls保存sysFile失败！");
+                                }
+                                result = (Map<String, String>) r.getData();
                             }
-                            Map<String, String> result = (Map<String, String>) r.getData();
+
 
                             //保存hotelAlbum
+                            Map<String, String> finalResult = result;
                             saveHotelAlbums = saveHotelAlbums.stream().filter(item -> {
-                                String imageId = result.get(item.getImageUrl());
+                                String imageId = finalResult.get(item.getImageUrl());
                                 if (StrUtil.isEmpty(imageId)) {
                                     return false;
                                 }

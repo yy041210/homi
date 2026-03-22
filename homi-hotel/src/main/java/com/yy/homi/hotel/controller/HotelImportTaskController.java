@@ -1,15 +1,18 @@
 package com.yy.homi.hotel.controller;
 
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.hotel.domain.dto.request.HotelImportTaskPageListReqDTO;
 import com.yy.homi.hotel.service.HotelImportTaskService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import java.util.List;
+
 @Validated
 @RestController
 @RequestMapping("/hotelimporttask")
@@ -20,11 +23,28 @@ public class HotelImportTaskController {
 
     /**
      * 新建导入任务（异步执行 前端轮询查询处理结果）
+     *
      * @return 任务ID
      */
     @PostMapping("/insertHotelImportTask")
     public R insertHotelImportTask(@RequestParam("taskName") String taskName, @RequestParam("taskType") @NotBlank String taskType, @RequestParam("file") MultipartFile file) {
-        return hotelImportTaskService.insertHotelImportTask(taskName,taskType,file);
+        return hotelImportTaskService.insertHotelImportTask(taskName, taskType, file);
     }
+
+    //分页查询所有任务
+    @Operation(summary = "分页查询任务列表")
+    @PostMapping("/pageList")
+    public R pageList(@RequestBody HotelImportTaskPageListReqDTO queryDTO) {
+        // Service 返回具体的 Page<HotelImportTaskVO>
+        return hotelImportTaskService.pageList(queryDTO);
+    }
+
+    @Operation(summary = "批量获取任务详情")
+    @PostMapping("/getImportTaskByIds")
+    public R getImportTaskByIds(@Validated @RequestBody @NotNull List<String> ids) {
+        // 直接透传 Service 返回的 R
+        return hotelImportTaskService.getImportTaskByIds(ids);
+    }
+
 
 }
