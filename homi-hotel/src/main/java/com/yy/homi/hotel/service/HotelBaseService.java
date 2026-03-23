@@ -22,4 +22,6 @@ public interface HotelBaseService extends IService<HotelBase> {
     R getByProvinceId(Integer provinceId);
 
     R saveHotel(HotelInsertDTO hotelInsertDTO);
+
+    R getInfoById(String id);
 }

@@ -31,4 +31,18 @@ public enum SurroundingCategoryEnum {
         }
         return OTHER; // 默认值
     }
+
+    /**
+     * 根据 code 获取描述
+     * @param code 分类代码
+     * @return 对应的描述，找不到返回 "其他" 或 ""
+     */
+    public static String getDescByCode(int code) {
+        for (SurroundingCategoryEnum s : values()) {
+            if (s.code == code) {
+                return s.desc;
+            }
+        }
+        return null;
+    }
 }

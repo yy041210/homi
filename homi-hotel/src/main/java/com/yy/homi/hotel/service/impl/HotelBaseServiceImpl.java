@@ -5,6 +5,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollStreamUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
+import cn.hutool.core.stream.SimpleCollector;
 import cn.hutool.core.stream.StreamUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
@@ -17,6 +18,9 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.AddressInfoTO;
+import com.yy.homi.common.enums.hotel.AlbumCategoryEnum;
+import com.yy.homi.common.enums.hotel.AlbumSourceEnum;
+import com.yy.homi.common.enums.hotel.SurroundingCategoryEnum;
 import com.yy.homi.hotel.domain.convert.HotelConverter;
 import com.yy.homi.hotel.domain.dto.request.HotelBasePageListReqDTO;
 import com.yy.homi.hotel.domain.dto.request.HotelInsertDTO;
@@ -28,6 +32,7 @@ import com.yy.homi.hotel.feign.SysDistrictFeign;
 import com.yy.homi.hotel.feign.SysProvinceFeign;
 import com.yy.homi.hotel.mapper.HotelAlbumMapper;
 import com.yy.homi.hotel.mapper.HotelBaseMapper;
+import com.yy.homi.hotel.mapper.HotelFacilityTypeMapper;
 import com.yy.homi.hotel.mapper.HotelStatsMapper;
 import com.yy.homi.hotel.service.*;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +45,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -62,6 +68,8 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
     private HotelBaseMapper hotelBaseMapper;
     @Autowired
     private HotelAlbumMapper hotelAlbumMapper;
+    @Autowired
+    private HotelFacilityTypeMapper hotelFacilityTypeMapper;
     @Autowired
     private AmapLocationFeign amapLocationFeign;
     @Autowired
@@ -256,7 +264,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         Set<Integer> cityIds = hotelVOS.stream().map(HotelVO::getCityId).collect(Collectors.toSet());
         Set<Integer> districtIds = hotelVOS.stream().map(HotelVO::getDistrictId).collect(Collectors.toSet());
 
-        if(CollectionUtil.isEmpty(hotelIds)){
+        if (CollectionUtil.isEmpty(hotelIds)) {
             return R.ok(new ArrayList<>());
         }
 
@@ -265,7 +273,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         R cityNamesR = sysCityFeign.getNamesByIds(new ArrayList<>(cityIds));
         R districtNamesR = sysDistrictFeign.getNamesByIds(new ArrayList<>(districtIds));
 
-        if(provinceNamesR.getCode() != HttpStatus.OK.value() || cityNamesR.getCode() != HttpStatus.OK.value() || districtNamesR.getCode() != HttpStatus.OK.value() ){
+        if (provinceNamesR.getCode() != HttpStatus.OK.value() || cityNamesR.getCode() != HttpStatus.OK.value() || districtNamesR.getCode() != HttpStatus.OK.value()) {
             return R.fail("远程调用查询地址信息错误!");
         }
         // 这样转换后，Map 里的 Key 就真的变成 Integer 了
@@ -295,15 +303,15 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
             Integer dId = hotelVO.getDistrictId();
             //省市区名
             List<String> regionPathList = new ArrayList<>();
-            if(pId != null && provinceNameMap.get(pId) != null){
+            if (pId != null && provinceNameMap.get(pId) != null) {
                 hotelVO.setProvinceName(provinceNameMap.get(pId));
                 regionPathList.add(provinceNameMap.get(pId));
             }
-            if(cId != null && cityNameMap.get(cId) != null){
+            if (cId != null && cityNameMap.get(cId) != null) {
                 hotelVO.setCityName(cityNameMap.get(cId));
                 regionPathList.add(cityNameMap.get(cId));
             }
-            if(dId != null && districtNameMap.get(dId) != null){
+            if (dId != null && districtNameMap.get(dId) != null) {
                 hotelVO.setDistrictName(districtNameMap.get(dId));
                 regionPathList.add(districtNameMap.get(dId));
             }
@@ -315,7 +323,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
 
             //hotelStats相关字段
             HotelStats hotelStats = statsMap.get(hotelId);
-            if(hotelStats != null){
+            if (hotelStats != null) {
                 hotelVO.setMinPrice(hotelStats.getMinPrice());
                 hotelVO.setCommentScore(hotelStats.getCommentScore());
                 hotelVO.setCommentCount(hotelStats.getCommentCount());
@@ -445,6 +453,190 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         }
 
         return R.ok("保存成功！");
+    }
+
+    @Override
+    public R getInfoById(String id) {
+        if (StrUtil.isEmpty(id)) {
+            return R.fail("酒店id不能为空！");
+        }
+
+        //1.查询酒店基本信息
+        HotelBase hotelBase = this.getById(id);
+        if (hotelBase == null) {
+            return R.fail("酒店id对应酒店不存在！");
+        }
+
+        JSONObject result = new JSONObject();
+        result.put("id", id);
+        result.put("name", hotelBase.getName());
+        result.put("nameEn", hotelBase.getNameEn());
+        result.put("star", hotelBase.getStar());
+        result.put("openYear", hotelBase.getOpenYear());
+        result.put("roomCount", hotelBase.getRoomCount());
+        result.put("description", hotelBase.getDescription());
+        result.put("provinceId", hotelBase.getProvinceId());
+        result.put("cityId", hotelBase.getCityId());
+        result.put("districtId", hotelBase.getDistrictId());
+        result.put("address", hotelBase.getAddress());
+        result.put("lat", hotelBase.getLat());
+        result.put("lng", hotelBase.getLng());
+
+
+        //2.查询HotelStats信息
+        HotelStats hotelStats = hotelStatsMapper.selectOne(new LambdaQueryWrapper<HotelStats>().eq(HotelStats::getHotelId, id));
+        if (hotelStats != null) {
+            result.put("commentCount", hotelStats.getCommentCount());
+            result.put("commentScore", hotelStats.getCommentScore());
+            result.put("hygieneScore", hotelStats.getHygieneScore());
+            result.put("deviceScore", hotelStats.getDeviceScore());
+            result.put("environmentScore", hotelStats.getEnvironmentScore());
+            result.put("serviceScore", hotelStats.getServiceScore());
+            result.put("tagTitle", hotelStats.getTagTitle());
+
+        }
+
+        //3.查询酒店房型
+        List<HotelRoom> hotelRooms = hotelRoomService.list(new LambdaQueryWrapper<HotelRoom>().eq(HotelRoom::getHotelId, id));
+        if (CollectionUtil.isNotEmpty(hotelRooms)) {
+            Set<String> roomIds = CollStreamUtil.toSet(hotelRooms, HotelRoom::getId);
+            //查询每个房型的3张图片
+            //酒店上传 + 精选 + 对应的roomId和hotelId
+            Map<String, List<String>> idImageUrlsMap = hotelAlbumMapper.selectList(new LambdaQueryWrapper<HotelAlbum>()
+                    .eq(HotelAlbum::getHotelId, id)
+                    .eq(HotelAlbum::getSource, AlbumSourceEnum.HOTEL.getCode())
+                    .eq(HotelAlbum::getCategory, AlbumCategoryEnum.ROOM.getCode())
+                    .in(HotelAlbum::getRoomId, roomIds)
+                    .last("limit 3")
+            ).stream().collect(Collectors.groupingBy(
+                    HotelAlbum::getRoomId, // Key: 房间ID
+                    Collectors.mapping(HotelAlbum::getImageUrl, Collectors.toList()) // Value: 只要URL并转成List
+            ));
+
+            //todo房型设备列表
+
+            JSONArray hotelRoomJsonList = new JSONArray();
+            for (HotelRoom hotelRoom : hotelRooms) {
+                JSONObject jsonObject = new JSONObject();
+                String roomId = hotelRoom.getId();
+                jsonObject.put("roomId", roomId);
+                jsonObject.put("name", hotelRoom.getName());
+                jsonObject.put("area", hotelRoom.getArea());
+                jsonObject.put("floor", hotelRoom.getFloor());
+                jsonObject.put("bedType", hotelRoom.getBedType());
+                jsonObject.put("window", hotelRoom.getWindow());
+                jsonObject.put("wifi", hotelRoom.getWifi());
+                jsonObject.put("smoke", hotelRoom.getSmoke());
+                jsonObject.put("maxOccupancy", hotelRoom.getMaxOccupancy());
+                jsonObject.put("highlightFields", hotelRoom.getHighlightFields());
+                List<String> imageUrls = idImageUrlsMap.get(roomId);
+                jsonObject.put("imageUrls", imageUrls);
+                hotelRoomJsonList.add(jsonObject);
+            }
+            result.put("hotelRooms", hotelRoomJsonList);
+
+        }
+
+
+        //4.查询酒店设备
+        List<HotelFacility> hotelFacilities = hotelFacilityService.list(
+                new LambdaQueryWrapper<HotelFacility>()
+                        .eq(HotelFacility::getHotelId, id)
+                        .orderByAsc(HotelFacility::getSeq)
+        );
+        if (CollectionUtil.isNotEmpty(hotelFacilities)) {
+            Set<String> typeIds = hotelFacilities.stream().map(HotelFacility::getHotelFacilityTypeId).collect(Collectors.toSet());
+
+            Map<String, List<HotelFacility>> typeIdHotelFacilityMap = hotelFacilities.stream().collect(Collectors.groupingBy(HotelFacility::getHotelFacilityTypeId));
+
+            List<HotelFacilityType> hotelFacilityTypes = hotelFacilityTypeMapper.selectList(new LambdaQueryWrapper<HotelFacilityType>()
+                    .in(HotelFacilityType::getId, typeIds)
+                    .orderByAsc(HotelFacilityType::getSeq)
+            );
+
+            JSONArray hotelFacilityListJson = new JSONArray();
+            ArrayList<String> facilityImageUrls = new ArrayList<>();
+            for (HotelFacilityType hotelFacilityType : hotelFacilityTypes) {
+                String typeId = hotelFacilityType.getId();
+                ArrayList<HotelFacility> facilityList = (ArrayList<HotelFacility>) typeIdHotelFacilityMap.get(typeId);
+                if (CollectionUtil.isEmpty(facilityList)) {
+                    continue;
+                }
+
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("facilityTypeId", typeId);
+                jsonObject.put("facilityTypeName", hotelFacilityType.getName());
+                jsonObject.put("facilityTypeIcon", hotelFacilityType.getIcon());
+
+                JSONArray hotelFacilitiesJSON = new JSONArray();
+                for (HotelFacility hotelFacility : facilityList) {
+                    JSONObject hotelFacilityJson = new JSONObject();
+                    hotelFacilityJson.put("facilityId", hotelFacility.getId());
+                    hotelFacilityJson.put("facilityName", hotelFacility.getName());
+                    hotelFacilityJson.put("facilityIcon", hotelFacility.getIcon());
+                    hotelFacilitiesJSON.add(hotelFacilityJson);
+                    if (StrUtil.isNotBlank(hotelFacility.getImageUrl())) {
+                        facilityImageUrls.add(hotelFacility.getImageUrl());
+                    }
+                }
+                jsonObject.put("hotelFacilities", hotelFacilitiesJSON);
+                hotelFacilityListJson.add(jsonObject);
+            }
+            result.put("facility",hotelFacilityListJson);
+            result.put("facilityImageUrls",facilityImageUrls);
+        }
+
+        //5.查询酒店周边
+        List<HotelSurrounding> hotelSurroundings = hotelSurroundingService.findByHotelId(id); //排好序了
+        // 获取所有枚举值并按 code 属性升序排列
+        SurroundingCategoryEnum[] categories = SurroundingCategoryEnum.values();
+        Arrays.sort(categories, Comparator.comparingInt(SurroundingCategoryEnum::getCode));
+
+        JSONArray surroundings = new JSONArray();
+        for (SurroundingCategoryEnum surroundingCategoryEnum : categories) {
+            JSONObject surroundingCategoryJSON = new JSONObject();
+            // 这里的循环就是按 code 0, 1, 2, 3... 顺序执行了
+            int code = surroundingCategoryEnum.getCode();
+            String desc = surroundingCategoryEnum.getDesc();
+            surroundingCategoryJSON.put("surroundingCategory",desc);
+
+            ArrayList<Object> surroundingJsonList = new ArrayList<>();
+            List<HotelSurrounding> hotelSurroundingList = hotelSurroundings.stream().filter(item -> item.getCategory() == code)
+                    .collect(Collectors.toList());
+            if(CollectionUtil.isEmpty(hotelSurroundingList)){
+                continue;
+            }
+            for (HotelSurrounding hotelSurrounding : hotelSurroundingList) {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("surroundingName",hotelSurrounding.getSurroundingName());
+                jsonObject.put("distance",hotelSurrounding.getDistance());
+                jsonObject.put("distanceDesc",hotelSurrounding.getDistanceDesc());
+                jsonObject.put("arrivalType",hotelSurrounding.getArrivalType());
+                jsonObject.put("tagName",hotelSurrounding.getTagName());
+                jsonObject.put("lat",hotelSurrounding.getLat());
+                jsonObject.put("lon",hotelSurrounding.getLon());
+                surroundingJsonList.add(jsonObject);
+            }
+            surroundingCategoryJSON.put("surroundings",surroundingJsonList);
+
+            surroundings.add(surroundingCategoryJSON);
+        }
+        result.put("surrounding",surroundings);
+
+
+
+        //6.酒店图集7张点击在查询更多
+        //酒店上传 + 精选 + 前七张
+        List<String> imageUrls = hotelAlbumMapper.selectList(new LambdaQueryWrapper<HotelAlbum>()
+                .eq(HotelAlbum::getHotelId, id)
+                .eq(HotelAlbum::getSource, AlbumSourceEnum.HOTEL.getCode())
+                .eq(HotelAlbum::getCategory, AlbumCategoryEnum.FEATURED.getCode())
+                .orderByAsc(HotelAlbum::getSeq)
+                .last("limit 7")
+        ).stream().map(HotelAlbum::getImageUrl).collect(Collectors.toList());
+        result.put("imageUrls", imageUrls);
+
+        return R.ok(result);
     }
 
 }

@@ -38,7 +38,9 @@ public class HotelSurroundingServiceImpl extends ServiceImpl<HotelSurroundingMap
     @Override
     public List<HotelSurrounding> findByHotelId(String hotelId) {
         return this.list(new LambdaQueryWrapper<HotelSurrounding>()
-                .eq(HotelSurrounding::getHotelId, hotelId));
+                .eq(HotelSurrounding::getHotelId, hotelId)
+                .orderByAsc(HotelSurrounding::getSeq)
+        );
     }
 
     @Override
