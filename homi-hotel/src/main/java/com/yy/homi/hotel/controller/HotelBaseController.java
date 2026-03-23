@@ -64,4 +64,9 @@ public class HotelBaseController {
         return hotelBaseService.getInfoById(id);
     }
 
+    @GetMapping("/changeStatus")
+    public R changeStatus(@RequestParam("id") @NotBlank(message = "酒店id不能为空!") String id){
+        return hotelBaseService.changeStatus(id);
+    }
+
 }

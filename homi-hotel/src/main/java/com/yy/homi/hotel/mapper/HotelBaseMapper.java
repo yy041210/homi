@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yy.homi.hotel.domain.entity.HotelBase;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
+import org.springframework.security.core.parameters.P;
 
 import java.util.Date;
 import java.util.List;
@@ -24,4 +26,7 @@ public interface HotelBaseMapper extends BaseMapper<HotelBase> {
             @Param("beginTime") Date beginTime,
             @Param("endTime") Date endTime
     );
+
+    @Update("update hotel_base set status = #{newStatus} where id = #{id}")
+    int changeStatus(@Param("id") String id, @Param("newStatus") int newStatus);
 }

@@ -584,8 +584,8 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                 jsonObject.put("hotelFacilities", hotelFacilitiesJSON);
                 hotelFacilityListJson.add(jsonObject);
             }
-            result.put("facility",hotelFacilityListJson);
-            result.put("facilityImageUrls",facilityImageUrls);
+            result.put("facility", hotelFacilityListJson);
+            result.put("facilityImageUrls", facilityImageUrls);
         }
 
         //5.查询酒店周边
@@ -600,31 +600,30 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
             // 这里的循环就是按 code 0, 1, 2, 3... 顺序执行了
             int code = surroundingCategoryEnum.getCode();
             String desc = surroundingCategoryEnum.getDesc();
-            surroundingCategoryJSON.put("surroundingCategory",desc);
+            surroundingCategoryJSON.put("surroundingCategory", desc);
 
             ArrayList<Object> surroundingJsonList = new ArrayList<>();
             List<HotelSurrounding> hotelSurroundingList = hotelSurroundings.stream().filter(item -> item.getCategory() == code)
                     .collect(Collectors.toList());
-            if(CollectionUtil.isEmpty(hotelSurroundingList)){
+            if (CollectionUtil.isEmpty(hotelSurroundingList)) {
                 continue;
             }
             for (HotelSurrounding hotelSurrounding : hotelSurroundingList) {
                 JSONObject jsonObject = new JSONObject();
-                jsonObject.put("surroundingName",hotelSurrounding.getSurroundingName());
-                jsonObject.put("distance",hotelSurrounding.getDistance());
-                jsonObject.put("distanceDesc",hotelSurrounding.getDistanceDesc());
-                jsonObject.put("arrivalType",hotelSurrounding.getArrivalType());
-                jsonObject.put("tagName",hotelSurrounding.getTagName());
-                jsonObject.put("lat",hotelSurrounding.getLat());
-                jsonObject.put("lon",hotelSurrounding.getLon());
+                jsonObject.put("surroundingName", hotelSurrounding.getSurroundingName());
+                jsonObject.put("distance", hotelSurrounding.getDistance());
+                jsonObject.put("distanceDesc", hotelSurrounding.getDistanceDesc());
+                jsonObject.put("arrivalType", hotelSurrounding.getArrivalType());
+                jsonObject.put("tagName", hotelSurrounding.getTagName());
+                jsonObject.put("lat", hotelSurrounding.getLat());
+                jsonObject.put("lon", hotelSurrounding.getLon());
                 surroundingJsonList.add(jsonObject);
             }
-            surroundingCategoryJSON.put("surroundings",surroundingJsonList);
+            surroundingCategoryJSON.put("surroundings", surroundingJsonList);
 
             surroundings.add(surroundingCategoryJSON);
         }
-        result.put("surrounding",surroundings);
-
+        result.put("surrounding", surroundings);
 
 
         //6.酒店图集7张点击在查询更多
@@ -639,6 +638,30 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         result.put("imageUrls", imageUrls);
 
         return R.ok(result);
+    }
+
+    @Override
+    public R changeStatus(String id) {
+        if (StrUtil.isBlank(id)) {
+            return R.fail("酒店id不能为空！");
+        }
+
+        HotelBase hotelBase = hotelBaseMapper.selectOne(new LambdaQueryWrapper<HotelBase>()
+                .eq(HotelBase::getId, id));
+        if (hotelBase == null) {
+            return R.fail("酒店id不存在！");
+        }
+
+        Integer status = hotelBase.getStatus();
+        int newStatus = 0;
+        if (status == CommonConstants.STATUS_ENABLED) {
+            newStatus = 1;
+            hotelBaseMapper.changeStatus(id, newStatus);
+            return R.ok("禁用成功！");
+        } else {
+            hotelBaseMapper.changeStatus(id, newStatus);
+            return R.ok("启用成功！");
+        }
     }
 
 }
