@@ -1,7 +1,9 @@
 package com.yy.homi.hotel.controller;
 
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.hotel.domain.convert.HotelSurroundingConverter;
 import com.yy.homi.hotel.domain.dto.request.HotelSurroundingPageListReqDTO;
+import com.yy.homi.hotel.domain.dto.request.HotelSurroundingUpdateReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelSurrounding;
 import com.yy.homi.hotel.service.HotelSurroundingService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,8 @@ public class HotelSurroundingController {
 
     @Autowired
     private HotelSurroundingService hotelSurroundingService;
+    @Autowired
+    private HotelSurroundingConverter hotelSurroundingConverter;
 
     /**
      * 获取指定酒店的所有周边信息
@@ -50,5 +54,12 @@ public class HotelSurroundingController {
     @PostMapping("/importHotelSurroundingFromCsv")
     public R importHotelSurroundingFromCsv(@RequestParam("file") MultipartFile file) {
         return hotelSurroundingService.importHotelSurroundingFromCsv(file);
+    }
+
+    @PostMapping("/updateById")
+    public R updateById(@Validated @RequestBody HotelSurroundingUpdateReqDTO reqDTO){
+        HotelSurrounding hotelSurrounding = hotelSurroundingConverter.updateDtoToEntity(reqDTO);
+        hotelSurroundingService.updateById(hotelSurrounding);
+        return R.ok("修改成功！");
     }
 }

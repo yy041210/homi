@@ -44,4 +44,5 @@ public interface HotelFacilityService extends IService<HotelFacility> {
 
     R pageList(HotelFacilityPageListReqDTO reqDTO);
 
+    R changeStatus(String id);
 }

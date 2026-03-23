@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotBlank;
 
 @Tag(name = "酒店设施管理")
 @RestController
@@ -21,5 +22,10 @@ public class HotelFacilityController {
     @PostMapping("/pageList")
     public R pageList(@RequestBody HotelFacilityPageListReqDTO reqDTO) {
         return hotelFacilityService.pageList(reqDTO);
+    }
+
+    @GetMapping("/changeStatus")
+    public R changeStatus(@RequestParam("id") @NotBlank(message = "设备id不能为空！")String id) {
+        return hotelFacilityService.changeStatus(id);
     }
 }

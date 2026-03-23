@@ -2,6 +2,7 @@ package com.yy.homi.hotel.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +10,7 @@ import java.util.Date;
 
 //酒店设施类型实体类
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName("hotel_facility_type")

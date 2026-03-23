@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.yy.homi.common.constant.CommonConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.HotelFacilityPageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelFacility;
 import com.yy.homi.hotel.mapper.HotelFacilityMapper;
 import com.yy.homi.hotel.service.HotelFacilityService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -22,12 +24,14 @@ import java.util.List;
 @Service
 public class HotelFacilityServiceImpl extends ServiceImpl<HotelFacilityMapper, HotelFacility> implements HotelFacilityService {
 
+    @Autowired
+    private HotelFacilityMapper hotelFacilityMapper;
+
+
     @Override
     public List<HotelFacility> getByHotelId(String hotelId) {
         LambdaQueryWrapper<HotelFacility> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(HotelFacility::getHotelId, hotelId);
-        // 如果需要按状态过滤，可以添加 status = 1 的条件
-        // queryWrapper.eq(HotelFacility::getStatus, 1);
         return baseMapper.selectList(queryWrapper);
     }
 
@@ -100,5 +104,29 @@ public class HotelFacilityServiceImpl extends ServiceImpl<HotelFacilityMapper, H
         // 5. 包装分页结果并返回
         PageInfo<HotelFacility> pageInfo = new PageInfo<>(list);
         return R.ok(pageInfo);
+    }
+
+    @Override
+    public R changeStatus(String id) {
+        if (StrUtil.isBlank(id)) {
+            return R.fail("设备id不能为空！");
+        }
+
+        HotelFacility hotelFacility = this.getById(id);
+        if(hotelFacility == null){
+            return R.fail("id对应的设备不存在！");
+        }
+        Integer newStatus = 0;
+        Integer status = hotelFacility.getStatus();
+        if(status == CommonConstants.STATUS_ENABLED){
+            //禁用操作
+            newStatus = CommonConstants.STATUS_DISABLED;
+            hotelFacilityMapper.changeStatus(id,newStatus);
+            return R.ok("禁用成功！");
+        }else{
+            //启用操作
+            hotelFacilityMapper.changeStatus(id,newStatus);
+            return R.ok("启用成功！");
+        }
     }
 }

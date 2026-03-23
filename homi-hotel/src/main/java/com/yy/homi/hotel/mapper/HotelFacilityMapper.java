@@ -3,12 +3,9 @@ package com.yy.homi.hotel.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yy.homi.hotel.domain.dto.FacilityTypeCountDTO;
 import com.yy.homi.hotel.domain.entity.HotelFacility;
-import org.apache.ibatis.annotations.MapKey;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Mapper
 public interface HotelFacilityMapper extends BaseMapper<HotelFacility> {
@@ -21,4 +18,7 @@ public interface HotelFacilityMapper extends BaseMapper<HotelFacility> {
 
     @Select("select count(1) from hotel_facility where status = 0")
     int countEnabled();
+
+    @Update("update hotel_facility set status = #{newStatus} where id = #{id}")
+    int changeStatus(@Param("id") String id,@Param("newStatus") Integer newStatus);
 }
