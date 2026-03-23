@@ -16,6 +16,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.yy.homi.common.constant.CommonConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.AddressInfoTO;
 import com.yy.homi.common.enums.hotel.AlbumCategoryEnum;
@@ -121,6 +122,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                     // 组装 HotelBase
                     HotelBase hotel = new HotelBase();
                     hotel.setId(hotelId);
+                    hotel.setStatus(CommonConstants.STATUS_ENABLED);
                     hotel.setName(nameObj.getString("name"));
                     hotel.setNameEn(nameObj.getString("enName"));
                     hotel.setStar(Integer.valueOf(row.get(3))); // CSV 第4列是 star

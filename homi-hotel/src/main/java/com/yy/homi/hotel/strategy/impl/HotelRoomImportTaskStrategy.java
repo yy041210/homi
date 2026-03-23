@@ -204,7 +204,23 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                 hotelRoom.setId(roomId);
                                 hotelRoom.setHotelId(hotelId);
                                 hotelRoom.setName(roomName);
-                                hotelRoom.setArea(area);
+                                String areaNumStr = area.replaceAll("平方米", "");
+                                hotelRoom.setAreaUnit("平方米");
+                                if(areaNumStr.contains("-")){
+                                    //10-20平方米
+                                    int minArea = Integer.parseInt(areaNumStr.split("-")[0]);
+                                    int maxArea = Integer.parseInt(areaNumStr.split("-")[1]);
+                                    hotelRoom.setMinArea(minArea);
+                                    hotelRoom.setMaxArea(maxArea);
+                                    hotelRoom.setArea(minArea+"-"+maxArea+"平方米");
+                                }else {
+                                    //10平方米
+                                    int areaNum = Integer.parseInt(areaNumStr);
+                                    hotelRoom.setMinArea(areaNum);
+                                    hotelRoom.setMinArea(areaNum);
+                                    hotelRoom.setArea(areaNum+"平方米");
+                                }
+
                                 hotelRoom.setFloor(floor);
                                 hotelRoom.setWifi(wifi);
                                 hotelRoom.setBedType(bedType);
@@ -212,6 +228,12 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                 hotelRoom.setMaxOccupancy(maxOccupancy);
                                 hotelRoom.setWindow(window);
                                 hotelRoom.setHighlightFields(heightLights);
+                                hotelRoom.setStatus(0);
+                                hotelRoom.setCreateBy(userId);
+                                Date now = new Date();
+                                hotelRoom.setCreateTime(now);
+                                hotelRoom.setUpdateBy(userId);
+                                hotelRoom.setUpdateTime(now);
 
                                 hotelRooms.add(hotelRoom);
                             }

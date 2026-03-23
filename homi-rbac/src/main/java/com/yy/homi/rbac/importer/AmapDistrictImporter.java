@@ -2,6 +2,7 @@ package com.yy.homi.rbac.importer;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.yy.homi.common.constant.CommonConstants;
 import com.yy.homi.rbac.domain.entity.SysProvince;
 import com.yy.homi.rbac.domain.entity.SysCity;
 import com.yy.homi.rbac.domain.entity.SysDistrict;
@@ -100,7 +101,7 @@ public class AmapDistrictImporter {
                 province.setCenterLat(new BigDecimal(lngLat[1]));
             }
             province.setSort(i);
-            province.setStatus(1);
+            province.setStatus(CommonConstants.STATUS_ENABLED);
             provinceService.saveOrUpdate(province);
             provinceCount++;
             log.debug("已处理省份：{}", province.getName());
@@ -130,7 +131,7 @@ public class AmapDistrictImporter {
                     city.setCenterLat(new BigDecimal(lngLat[1]));
                 }
                 city.setSort(j);
-                city.setStatus(1);
+                city.setStatus(CommonConstants.STATUS_ENABLED);
                 cityService.saveOrUpdate(city);
                 cityCount++;
                 log.debug("  已处理城市：{}", city.getName());
@@ -158,7 +159,7 @@ public class AmapDistrictImporter {
                         district.setCenterLat(new BigDecimal(lngLat[1]));
                     }
                     district.setSort(k);
-                    district.setStatus(1);
+                    district.setStatus(CommonConstants.STATUS_ENABLED);
                     districtService.saveOrUpdate(district);
                     districtCount++;
                 }

@@ -21,6 +21,9 @@ public class HotelRoom {
     private String hotelId; //关联的酒店id
     private String name; //房型名字
     private String area;  //面积
+    private Integer minArea;   //最小面积
+    private Integer maxArea;   //最大面积
+    private String areaUnit;  //面积单位
     private String floor; //楼层
     private String bedType; //床型
     @TableField("`window`")
