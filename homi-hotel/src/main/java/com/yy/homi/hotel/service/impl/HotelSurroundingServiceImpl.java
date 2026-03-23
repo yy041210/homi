@@ -1,13 +1,17 @@
 package com.yy.homi.hotel.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.read.listener.PageReadListener;
 import com.alibaba.excel.support.ExcelTypeEnum;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.enums.hotel.SurroundingCategoryEnum;
+import com.yy.homi.hotel.domain.dto.request.HotelSurroundingPageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelBase;
 import com.yy.homi.hotel.domain.entity.HotelSurrounding;
 import com.yy.homi.hotel.mapper.HotelBaseMapper;
@@ -122,6 +126,44 @@ public class HotelSurroundingServiceImpl extends ServiceImpl<HotelSurroundingMap
             log.error("导入失败", e);
             return R.fail("导入失败: " + e.getMessage());
         }
+    }
+
+    @Override
+    public R pageList(HotelSurroundingPageListReqDTO reqDTO) {
+        // 1. 开启分页 (PageHelper)
+        PageHelper.startPage(reqDTO.getPageNum(), reqDTO.getPageSize());
+
+        // 2. 构造查询条件
+        LambdaQueryWrapper<HotelSurrounding> lqw = new LambdaQueryWrapper<>();
+
+        // 酒店ID精确匹配 (必传)
+        lqw.eq(StrUtil.isNotBlank(reqDTO.getHotelId()), HotelSurrounding::getHotelId, reqDTO.getHotelId());
+
+        // 分类匹配
+        lqw.eq(reqDTO.getCategory() != null, HotelSurrounding::getCategory, reqDTO.getCategory());
+
+        // 名称模糊匹配
+        lqw.like(StrUtil.isNotBlank(reqDTO.getSurroundingName()), HotelSurrounding::getSurroundingName, reqDTO.getSurroundingName());
+
+        // 3. 动态排序处理
+        if (reqDTO.getSortRule() != null) {
+            switch (reqDTO.getSortRule()) {
+                case 1:
+                    lqw.orderByAsc(HotelSurrounding::getDistance);
+                    break;
+                default:
+                    lqw.orderByAsc(HotelSurrounding::getSeq); // 默认排序
+            }
+        } else {
+            lqw.orderByAsc(HotelSurrounding::getSeq); // 缺省排序
+        }
+
+        // 4. 执行查询
+        List<HotelSurrounding> list = this.list(lqw);
+
+        // 5. 封装 PageInfo 并返回结果
+        PageInfo<HotelSurrounding> pageInfo = new PageInfo<>(list);
+        return R.ok(pageInfo);
     }
 
     // 辅助方法：距离格式化 (2.2千米 -> 2200.0)

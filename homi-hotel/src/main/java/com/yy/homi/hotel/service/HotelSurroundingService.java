@@ -2,6 +2,7 @@ package com.yy.homi.hotel.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.hotel.domain.dto.request.HotelSurroundingPageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelSurrounding;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,4 +20,7 @@ public interface HotelSurroundingService extends IService<HotelSurrounding> {
     List<HotelSurrounding> findByHotelIdAndCategory(String hotelId, Integer category);
 
     R importHotelSurroundingFromCsv(MultipartFile file);
+
+    R pageList(HotelSurroundingPageListReqDTO reqDTO);
+
 }

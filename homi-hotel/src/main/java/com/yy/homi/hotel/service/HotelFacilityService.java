@@ -1,6 +1,8 @@
 package com.yy.homi.hotel.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.hotel.domain.dto.request.HotelFacilityPageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelFacility;
 
 import java.util.List;
@@ -39,4 +41,7 @@ public interface HotelFacilityService extends IService<HotelFacility> {
      * @return 删除数量
      */
     boolean removeByHotelId(String hotelId);
+
+    R pageList(HotelFacilityPageListReqDTO reqDTO);
+
 }
