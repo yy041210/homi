@@ -92,10 +92,12 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
             //判断csv格式
             // 1. 创建 CsvReader（指定 GBK 编码解决你之前的报错）
             CsvReader reader = CsvUtil.getReader();
+            CsvData gbk = reader.read(destFile, Charset.forName("GBK"));
+
             if (taskType.equals("HOTEL_FACILITY")) {
                 //酒店设备，7列
                 // 2. 只读取文件头
-                CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
+                CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
                     if (columnCount != 7) {
@@ -106,7 +108,7 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
             } else if (taskType.equals("HOTEL_ROOM")) {
                 //酒店基本房型，12列
                 // 2. 只读取文件头
-                CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
+                CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
                     if (columnCount != 12) {
@@ -117,7 +119,7 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
             } else if (taskType.equals("HOTEL_INTRODUCTION")) {
                 //酒店简介相关内容，5列
                 // 2. 只读取文件头
-                CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
+                CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
                     if (columnCount != 5) {
@@ -128,10 +130,21 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
             } else if (taskType.equals("HOTEL_COMMENT")) {
                 //酒店评论相关内容，12列
                 // 2. 只读取文件头
-                CsvData csvData = reader.read(destFile, Charset.forName("GBK"));
+                CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
                     if (columnCount != 12) {
+                        destFile.delete();
+                        return R.fail("csv文件格式不正确！");
+                    }
+                }
+            }else if (taskType.equals("HOTEL_ROOM_FACILITY")) {
+                //酒店房型关联设备
+                // 2. 只读取文件头
+                CsvData csvData = gbk;
+                if (csvData.getRowCount() > 0) {
+                    int columnCount = csvData.getRow(0).getFieldCount();
+                    if (columnCount != 7) {
                         destFile.delete();
                         return R.fail("csv文件格式不正确！");
                     }

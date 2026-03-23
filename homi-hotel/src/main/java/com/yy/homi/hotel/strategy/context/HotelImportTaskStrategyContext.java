@@ -5,6 +5,8 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.yy.homi.common.constant.RbacConstants;
 import com.yy.homi.common.exception.ServiceException;
+import com.yy.homi.hotel.domain.entity.HotelImportTask;
+import com.yy.homi.hotel.mapper.HotelImportTaskMapper;
 import com.yy.homi.hotel.strategy.HotelImportTaskStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 //酒店导入策略的上下文对象
 @Component
 public class HotelImportTaskStrategyContext {
+
+    @Autowired
+    private HotelImportTaskMapper hotelImportTaskMapper;
 
     private static final Map<String, HotelImportTaskStrategy> HOTEL_IMPORT_TASK_STRATEGY_MAP = new ConcurrentHashMap<>();
 
@@ -32,6 +37,7 @@ public class HotelImportTaskStrategyContext {
     public void execute(String taskId, String filePath, String taskType) {
         HotelImportTaskStrategy hotelImportTaskStrategy = HOTEL_IMPORT_TASK_STRATEGY_MAP.get(taskType);
         if (hotelImportTaskStrategy == null) {
+            hotelImportTaskMapper.updateToFailed(taskId,HotelImportTask.STATUS_FAILED,"未找到任务类型为 [" + taskType + "] 的处理策略");
             throw new ServiceException("未找到任务类型为 [" + taskType + "] 的处理策略");
         }
 

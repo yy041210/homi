@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.hotel.mapper.HotelRoomFacilityMapper">
+
+    <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.HotelRoomFacility">
+        <id column="id" property="id" />
+        <result column="room_id" property="roomId" />
+        <result column="facility_type" property="facilityType" />
+        <result column="name" property="name" />
+        <result column="status" property="status" />
+        <result column="tags" property="tags" />
+        <result column="seq" property="seq" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, room_id, facility_type, name, status, tags, seq
+    </sql>
+
+    <delete id="deleteByRoomId">
+        DELETE FROM hotel_room_facility WHERE room_id = #{roomId}
+    </delete>
+
+    <select id="countByCategory" resultType="java.util.Map">
+        SELECT facility_type as type, COUNT(*) as count
+        FROM hotel_room_facility
+        WHERE room_id = #{roomId} AND status = 0
+        GROUP BY facility_type
+    </select>
+
+</mapper>
