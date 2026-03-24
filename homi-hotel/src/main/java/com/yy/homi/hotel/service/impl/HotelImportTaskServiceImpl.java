@@ -140,11 +140,23 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                 }
             }else if (taskType.equals("HOTEL_ROOM_FACILITY")) {
                 //酒店房型关联设备
-                // 2. 只读取文件头
+                //只读取文件头
                 CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
                     if (columnCount != 7) {
+                        destFile.delete();
+                        return R.fail("csv文件格式不正确！");
+                    }
+                }
+            }
+            else if (taskType.equals("HOTEL_BASE")) {
+                //酒店基本信息
+                //只读取文件头
+                CsvData csvData = gbk;
+                if (csvData.getRowCount() > 0) {
+                    int columnCount = csvData.getRow(0).getFieldCount();
+                    if (columnCount != 15) {
                         destFile.delete();
                         return R.fail("csv文件格式不正确！");
                     }

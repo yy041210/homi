@@ -17,6 +17,7 @@ import com.yy.homi.hotel.service.HotelRoomFacilityService;
 import com.yy.homi.hotel.strategy.HotelImportTaskStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -41,6 +42,7 @@ public class HotelRoomFacilityImportTaskStrategy implements HotelImportTaskStrat
         return "HOTEL_ROOM_FACILITY";
     }
 
+    @Async(value = "homiExecutor")
     @Override
     public void execute(String taskId, String filePath, String userId) {
         log.info("开始执行房型关联设备异步导入任务, TaskId: {}, File: {}", taskId, filePath);

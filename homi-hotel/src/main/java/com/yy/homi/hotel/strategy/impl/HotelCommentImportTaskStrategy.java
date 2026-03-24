@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -56,6 +57,7 @@ public class HotelCommentImportTaskStrategy implements HotelImportTaskStrategy {
         return "HOTEL_COMMENT";
     }
 
+    @Async(value = "homiExecutor")
     @Override
     public void execute(String taskId, String filePath, String userId) {
         log.info("开始执行酒店设备异步导入任务, TaskId: {}, File: {}", taskId, filePath);

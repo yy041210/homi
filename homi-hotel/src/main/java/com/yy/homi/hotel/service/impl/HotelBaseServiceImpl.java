@@ -178,8 +178,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
 //                                    hotel.setCityName(addressInfo.getCity());
                                     // hotel.setDistrictName(addressInfo.getDistrict());
 
-                                    log.debug("第{}行 - 通过经纬度获取地区信息成功: 省={}, 市={}, 区={}",
-                                            i, addressInfo.getProvince(), addressInfo.getCity(), addressInfo.getDistrict());
+                                    log.debug("第{}行 - 通过经纬度获取地区信息成功: 省={}, 市={}, 区={}", i, addressInfo.getProvince(), addressInfo.getCity(), addressInfo.getDistrict());
                                 }
                             } catch (Exception e) {
                                 log.error("第{}行 - 调用地区服务异常，HotelBase: {} - 异常信息：{}", i, hotel, e.getMessage());
