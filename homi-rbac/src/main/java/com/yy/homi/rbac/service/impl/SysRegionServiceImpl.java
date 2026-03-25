@@ -2,6 +2,7 @@ package com.yy.homi.rbac.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.yy.homi.common.constant.CommonConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.rbac.domain.dto.request.RegionInsertReqDTO;
 import com.yy.homi.rbac.domain.entity.SysCity;
@@ -35,13 +36,13 @@ public class SysRegionServiceImpl implements SysRegionService {
     public R getRegionTree() {
         // 1. 获取所有省、市、区（假设只查询启用状态的）
         List<SysProvince> allProvinces = provinceMapper.selectList(
-                new LambdaQueryWrapper<SysProvince>().eq(SysProvince::getStatus, 1).orderByAsc(SysProvince::getSort)
+                new LambdaQueryWrapper<SysProvince>().eq(SysProvince::getStatus, CommonConstants.STATUS_ENABLED).orderByAsc(SysProvince::getSort)
         );
         List<SysCity> allCities = cityMapper.selectList(
-                new LambdaQueryWrapper<SysCity>().eq(SysCity::getStatus, 1).orderByAsc(SysCity::getSort)
+                new LambdaQueryWrapper<SysCity>().eq(SysCity::getStatus, CommonConstants.STATUS_ENABLED).orderByAsc(SysCity::getSort)
         );
         List<SysDistrict> allDistricts = districtMapper.selectList(
-                new LambdaQueryWrapper<SysDistrict>().eq(SysDistrict::getStatus, 1).orderByAsc(SysDistrict::getSort)
+                new LambdaQueryWrapper<SysDistrict>().eq(SysDistrict::getStatus, CommonConstants.STATUS_ENABLED).orderByAsc(SysDistrict::getSort)
         );
 
         // 2. 将区县按城市ID进行分组

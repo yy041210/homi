@@ -22,10 +22,12 @@ import com.yy.homi.hotel.strategy.HotelImportTaskStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 //酒店图集异步导入任务
@@ -51,6 +53,7 @@ public class HotelAlbumImportTaskStrategy implements HotelImportTaskStrategy {
         return "HOTEL_ALBUM";
     }
 
+    @Async(value = "homiExecutor")
     @Override
     public void execute(String taskId, String filePath, String userId) {
         log.info("开始执行酒店图集异步导入任务, TaskId: {}, File: {}", taskId, filePath);
@@ -106,7 +109,7 @@ public class HotelAlbumImportTaskStrategy implements HotelImportTaskStrategy {
                 public void onException(Exception exception, AnalysisContext context) throws Exception {
                     // 更新任务状态为失败
                     hotelImportTaskMapper.updateToFailed(taskId, HotelImportTask.STATUS_FAILED, "Excel读取异常! 异常信息：" + exception.getMessage());
-                    throw exception;
+                    throw new RuntimeException(exception);
                 }
 
                 void processData(List<Map<Integer, String>> dataList) {
@@ -217,11 +220,14 @@ public class HotelAlbumImportTaskStrategy implements HotelImportTaskStrategy {
 
                 }
 
-            });
+            })
+                    .sheet()
+                    .headRowNumber(1)
+                    .doRead();
 
         } catch (Exception e) {
             hotelImportTaskMapper.updateToFailed(taskId, HotelImportTask.STATUS_FAILED, e.getMessage());
-            throw e;
+            throw new RuntimeException(e);
         } finally {
             tempFile.delete();
         }

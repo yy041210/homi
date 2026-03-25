@@ -468,6 +468,8 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
             return R.fail("酒店id对应酒店不存在！");
         }
 
+
+
         JSONObject result = new JSONObject();
         result.put("id", id);
         result.put("name", hotelBase.getName());
@@ -488,6 +490,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         HotelStats hotelStats = hotelStatsMapper.selectOne(new LambdaQueryWrapper<HotelStats>().eq(HotelStats::getHotelId, id));
         if (hotelStats != null) {
             result.put("commentCount", hotelStats.getCommentCount());
+            result.put("commentDesc",hotelStats.getCommentDescription());
             result.put("commentScore", hotelStats.getCommentScore());
             result.put("hygieneScore", hotelStats.getHygieneScore());
             result.put("deviceScore", hotelStats.getDeviceScore());
@@ -508,7 +511,6 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                     .eq(HotelAlbum::getSource, AlbumSourceEnum.HOTEL.getCode())
                     .eq(HotelAlbum::getCategory, AlbumCategoryEnum.ROOM.getCode())
                     .in(HotelAlbum::getRoomId, roomIds)
-                    .last("limit 3")
             ).stream().collect(Collectors.groupingBy(
                     HotelAlbum::getRoomId, // Key: 房间ID
                     Collectors.mapping(HotelAlbum::getImageUrl, Collectors.toList()) // Value: 只要URL并转成List
@@ -530,6 +532,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                 jsonObject.put("smoke", hotelRoom.getSmoke());
                 jsonObject.put("maxOccupancy", hotelRoom.getMaxOccupancy());
                 jsonObject.put("highlightFields", hotelRoom.getHighlightFields());
+                jsonObject.put("status",hotelRoom.getStatus());
                 List<String> imageUrls = idImageUrlsMap.get(roomId);
                 jsonObject.put("imageUrls", imageUrls);
                 hotelRoomJsonList.add(jsonObject);
@@ -556,7 +559,6 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
             );
 
             JSONArray hotelFacilityListJson = new JSONArray();
-            ArrayList<String> facilityImageUrls = new ArrayList<>();
             for (HotelFacilityType hotelFacilityType : hotelFacilityTypes) {
                 String typeId = hotelFacilityType.getId();
                 ArrayList<HotelFacility> facilityList = (ArrayList<HotelFacility>) typeIdHotelFacilityMap.get(typeId);
@@ -575,16 +577,18 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                     hotelFacilityJson.put("facilityId", hotelFacility.getId());
                     hotelFacilityJson.put("facilityName", hotelFacility.getName());
                     hotelFacilityJson.put("facilityIcon", hotelFacility.getIcon());
-                    hotelFacilitiesJSON.add(hotelFacilityJson);
+                    hotelFacilityJson.put("status",hotelFacility.getStatus());
+                    List<String> tagList = hotelFacility.getTagList();
+                    hotelFacilityJson.put("tags",tagList);
                     if (StrUtil.isNotBlank(hotelFacility.getImageUrl())) {
-                        facilityImageUrls.add(hotelFacility.getImageUrl());
+                        hotelFacilityJson.put("imageUrl",hotelFacility.getImageUrl());
                     }
+                    hotelFacilitiesJSON.add(hotelFacilityJson);
                 }
-                jsonObject.put("hotelFacilities", hotelFacilitiesJSON);
+                jsonObject.put("facilities",hotelFacilitiesJSON);
                 hotelFacilityListJson.add(jsonObject);
             }
-            result.put("facility", hotelFacilityListJson);
-            result.put("facilityImageUrls", facilityImageUrls);
+            result.put("hotelFacility", hotelFacilityListJson);
         }
 
         //5.查询酒店周边
@@ -609,6 +613,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
             }
             for (HotelSurrounding hotelSurrounding : hotelSurroundingList) {
                 JSONObject jsonObject = new JSONObject();
+                jsonObject.put("surroundingId",hotelSurrounding.getId());
                 jsonObject.put("surroundingName", hotelSurrounding.getSurroundingName());
                 jsonObject.put("distance", hotelSurrounding.getDistance());
                 jsonObject.put("distanceDesc", hotelSurrounding.getDistanceDesc());

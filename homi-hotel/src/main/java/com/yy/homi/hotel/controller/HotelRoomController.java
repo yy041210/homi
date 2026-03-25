@@ -36,4 +36,9 @@ public class HotelRoomController {
         return hotelRoomService.deleteByIds(ids);
     }
 
+    @GetMapping("/changeStatus")
+    public R changeStatus(@RequestParam("id") @NotBlank(message = "房型id不能为空！")String id){
+        return hotelRoomService.changeStatus(id);
+    }
+
 }

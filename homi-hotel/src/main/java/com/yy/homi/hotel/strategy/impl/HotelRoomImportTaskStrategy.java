@@ -191,7 +191,7 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                         hotelAlbum.setRoomId(roomId);
                                         hotelAlbum.setHotelId(hotelId);
                                         hotelAlbum.setSource(AlbumSourceEnum.HOTEL.getCode());
-                                        hotelAlbum.setCategory(AlbumCategoryEnum.FEATURED.getCode());
+                                        hotelAlbum.setCategory(AlbumCategoryEnum.ROOM.getCode());  //房间分类
                                         hotelAlbum.setImageUrl(imageUrl);
                                         hotelAlbum.setCreateBy(userId);
                                         hotelAlbum.setCreateTime(new Date());

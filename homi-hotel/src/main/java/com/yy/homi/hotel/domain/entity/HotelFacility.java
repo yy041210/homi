@@ -1,11 +1,15 @@
 package com.yy.homi.hotel.domain.entity;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 //酒店设施实体类
 @Data
@@ -39,21 +43,41 @@ public class HotelFacility {
 
     private Integer seq;
 
-    /** 创建者 */
+    /**
+     * 创建者
+     */
     @TableField(fill = FieldFill.INSERT)
     private String createBy;
 
-    /** 创建时间 */
+    /**
+     * 创建时间
+     */
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
-    /** 更新者 */
+    /**
+     * 更新者
+     */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private String updateBy;
 
-    /** 更新时间 */
+    /**
+     * 更新时间
+     */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
+
+    public List<String> getTagList() {
+        if (StrUtil.isEmpty(this.tags)) {
+            return new ArrayList<>();
+        }
+        String[] tagsArr = this.tags.split(",");
+        if (tagsArr.length > 0) {
+            List<String> list = Arrays.asList(tagsArr);
+            return list;
+        }
+        return new ArrayList<>();
+    }
 
 
 }

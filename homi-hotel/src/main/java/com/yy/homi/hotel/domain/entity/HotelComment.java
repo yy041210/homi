@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 酒店评论实体类
@@ -45,5 +46,8 @@ public class HotelComment {
 
     /** 时间字段 */
     private Date publishTime;        // 评价发布时间
+
+    @TableField(exist = false)
+    private List<String> fileUrls;
 
 }

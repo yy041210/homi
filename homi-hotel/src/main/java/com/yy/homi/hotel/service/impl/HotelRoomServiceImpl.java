@@ -31,6 +31,8 @@ public class HotelRoomServiceImpl extends ServiceImpl<HotelRoomMapper, HotelRoom
 
     @Autowired
     private HotelAlbumMapper hotelAlbumMapper;
+    @Autowired
+    private HotelRoomMapper hotelRoomMapper;
 
     @Override
     public R pageList(HotelRoomPageListReqDTO reqDTO) {
@@ -82,7 +84,7 @@ public class HotelRoomServiceImpl extends ServiceImpl<HotelRoomMapper, HotelRoom
                         new LambdaQueryWrapper<HotelAlbum>()
                                 .eq(HotelAlbum::getSource, AlbumSourceEnum.HOTEL.getCode())
                                 .eq(HotelAlbum::getCategory, AlbumCategoryEnum.ROOM.getCode())
-                                .in(CollectionUtil.isNotEmpty(roomIds),HotelAlbum::getRoomId, roomIds)
+                                .in(CollectionUtil.isNotEmpty(roomIds), HotelAlbum::getRoomId, roomIds)
                                 .orderByAsc(HotelAlbum::getSeq)
                 )
                 .stream()
@@ -102,10 +104,10 @@ public class HotelRoomServiceImpl extends ServiceImpl<HotelRoomMapper, HotelRoom
 
             String roomId = room.getId();
             List<String> imageUrls = roomIdImageUrlsMap.get(roomId);
-            if(imageUrls != null){
-                jsonObject.put("imageUrls",imageUrls);
-            }else{
-                jsonObject.put("imageUrls",new ArrayList<>());
+            if (imageUrls != null) {
+                jsonObject.put("imageUrls", imageUrls);
+            } else {
+                jsonObject.put("imageUrls", new ArrayList<>());
             }
 
             return jsonObject;
@@ -135,5 +137,29 @@ public class HotelRoomServiceImpl extends ServiceImpl<HotelRoomMapper, HotelRoom
         }
         //todo 批量删除房型
         return R.ok("删除成功！");
+    }
+
+    @Override
+    public R changeStatus(String id) {
+        if (StrUtil.isBlank(id)) {
+            return R.fail("房型id不能为空！");
+        }
+
+        HotelRoom hotelRoom = hotelRoomMapper.selectById(id);
+        if(hotelRoom == null){
+            return R.fail("房型id对应房型不存在！");
+        }
+
+        Integer status = hotelRoom.getStatus();
+        Integer newStatus = 0;
+        if(status == newStatus){
+            newStatus = 1;
+            hotelRoomMapper.changeStatus(id,newStatus);
+            return R.ok("禁用成功！");
+        }else {
+            hotelRoomMapper.changeStatus(id,newStatus);
+            return R.ok("启用成功！");
+        }
+
     }
 }

@@ -138,14 +138,14 @@ public class HotelSurroundingImportTaskStrategy implements HotelImportTaskStrate
                                 if (StrUtil.isNotBlank(distanceStr)) {
                                     if (!distanceStr.equals("<100米")) {
                                         if (distanceStr.contains("千米") || distanceStr.equals("公里") || distanceStr.equals("km")) {
-                                            distanceStr.replaceAll("千米", "");
-                                            distanceStr.replaceAll("公里", "");
-                                            distanceStr.replaceAll("km", "");
+                                            distanceStr = distanceStr.replaceAll("千米", "");
+                                            distanceStr = distanceStr.replaceAll("公里", "");
+                                            distanceStr = distanceStr.replaceAll("km", "");
                                             Double distance = Double.valueOf(distanceStr);
                                             hotelSurrounding.setDistance(distance * 1000);
                                         } else if (distanceStr.contains("米") || distanceStr.equals("m")) {
-                                            distanceStr.replaceAll("米", "");
-                                            distanceStr.replaceAll("m", "");
+                                            distanceStr = distanceStr.replaceAll("米", "");
+                                            distanceStr = distanceStr.replaceAll("m", "");
                                             Double distance = Double.valueOf(distanceStr);
                                             hotelSurrounding.setDistance(distance);
                                         }
