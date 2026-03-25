@@ -34,4 +34,15 @@
         del_flag
     </sql>
 
+    <select id="selectInHashExtList" resultType="com.yy.homi.file.domain.entity.SysFile">
+        select * from sys_file
+        <where>
+            <foreach collection="hashExtList" item="item" separator="OR">
+                <bind name="hash" value="item.substring(0, item.lastIndexOf('-'))" />
+                <bind name="ext" value="item.substring(item.lastIndexOf('-') + 1)" />
+                (file_hash = #{hash} AND extension = #{ext})
+            </foreach>
+        </where>
+    </select>
+
 </mapper>

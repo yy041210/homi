@@ -1,6 +1,7 @@
 package com.yy.homi.file.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -34,6 +35,7 @@ import java.net.URLEncoder;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -243,50 +245,30 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
             return R.fail("urls集合不能为空！");
         }
         HashSet<String> urlsSet = new HashSet<>(urls);
+        Map<String, String> urlHashExtMap = new ConcurrentHashMap<>();
+        Map<String, Long> urlSizeMap = new ConcurrentHashMap<>();
         CountDownLatch countDownLatch = new CountDownLatch(urlsSet.size());
-        ConcurrentHashMap<String, String> successMap = new ConcurrentHashMap<>();
 
-        //存入sys_file
-        List<SysFile> sysFiles = Collections.synchronizedList(new ArrayList<>());
-        Map<String, String> result = new HashMap<>(); // k: url ,v : fileId
-        //查询所有文件(逻辑 sha256＋文件后缀唯一)
-        Map<String, String> hashIdExtensionMap = sysFileMapper.selectList(null).stream().collect(Collectors.toMap(
-                sysFile -> sysFile.getFileHash()+sysFile.getExtension(),
-                SysFile::getId)
-        );
-
-        // 存储失败的URL及错误信息
-        ConcurrentHashMap<String, String> errorMap = new ConcurrentHashMap<>();
-
-        urlsSet.forEach(url -> homiExecutor.submit(() -> {
-            try {
-                URL imageUrl = new URL(url);
-                URLConnection urlConnection = imageUrl.openConnection();
-                InputStream is = urlConnection.getInputStream();
-                String sha256 = FileUtils.getSha256(is);
-                String fileExtension = FileUtils.getFileExtension(url);
-                String imageId = hashIdExtensionMap.get(sha256+fileExtension);
-                //校验数据库是否有相同文件
-                if (imageId != null) {
-                    result.put(url, imageId);
-                } else {
-                    SysFile sysFile = new SysFile();
-                    String[] split = url.split("/");
-                    sysFile.setFileName(split[split.length - 1]);
-                    sysFile.setFileHash(sha256);
-                    sysFile.setUrl(url);
-                    sysFile.setExtension(fileExtension);
-                    sysFile.setSize(urlConnection.getContentLengthLong());
-                    sysFile.setDelFlag(CommonConstants.DEL_NORMAL);
-                    sysFiles.add(sysFile);
+        urlsSet.forEach(url -> homiExecutor.submit(
+                () -> {
+                    try {
+                        //计算url的sha256
+                        URL imageUrl = new URL(url);
+                        URLConnection urlConnection = imageUrl.openConnection();
+                        InputStream is = urlConnection.getInputStream();
+                        String sha256 = FileUtils.getSha256(is);
+                        is.close();
+                        String fileExtension = FileUtils.getFileExtension(url);
+                        long size = urlConnection.getContentLengthLong();
+                        urlSizeMap.put(url, size);
+                        urlHashExtMap.put(url, sha256 + "-" + fileExtension);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        countDownLatch.countDown();
+                    }
                 }
-                countDownLatch.countDown();
-            } catch (MalformedURLException e) {
-                errorMap.put(url, "读取url失败! 异常信息：" + e.getMessage());
-            } catch (IOException e) {
-                errorMap.put(url, "读取url失败! 文件不存在");
-            }
-        }));
+        ));
 
         try {
             countDownLatch.await();
@@ -295,26 +277,76 @@ public class SysFileServiceImpl extends ServiceImpl<SysFileMapper, SysFile> impl
         }
 
 
-//        successMap.forEach((k, v) -> {
-//            //校验数据库是否有相同文件
-//            if (hashIdMap.get(v) != null) {
-//                result.put(k, hashIdMap.get(v));
-//            } else {
-//                SysFile sysFile = new SysFile();
-//                String[] split = k.split("/");
-//                sysFile.setFileName(split[split.length - 1]);
-//                sysFile.setFileHash(v);
-//                sysFile.setUrl(k);
-//                sysFile.setExtension("jpg");
-//                sysFile.setDelFlag(CommonConstants.DEL_NORMAL);
-//                sysFiles.add(sysFile);
-//            }
-//        });
-
-        if(CollectionUtil.isNotEmpty(sysFiles)){
-            this.saveBatch(sysFiles);
-            sysFiles.stream().forEach(sysfile -> result.put(sysfile.getUrl(), sysfile.getId()));
+        //查询该批数据的 sha256 和 后缀相同 的数据库中是否存在
+        Set<String> hashExtSet = urlHashExtMap.values().stream().collect(Collectors.toSet());
+        if (CollectionUtil.isEmpty(hashExtSet)) {
+            return R.fail("hashExtSet为空！");
         }
+//        List<SysFile> existFiles = sysFileMapper.selectInHashExtList(new ArrayList<>(hashExtSet));
+        LambdaQueryWrapper<SysFile> queryWrapper = new LambdaQueryWrapper<>();
+        // 使用 and 包裹所有 or 条件
+        queryWrapper.and(wrapper -> {
+            for (String s : hashExtSet) {
+                String[] parts = s.split("-");
+                String hash = parts[0];
+                String ext = parts[1];
+
+                wrapper.or(subWrapper -> subWrapper
+                        .eq(SysFile::getFileHash, hash)
+                        .eq(SysFile::getExtension, ext));
+            }
+        });
+        List<SysFile> existFiles = sysFileMapper.selectList(queryWrapper);
+        Map<String, String> hashExtIdMap = existFiles.stream().collect(Collectors.toMap(
+                item -> item.getFileHash() + "-" + item.getExtension(),
+                SysFile::getId
+        ));
+
+        Map<String, String> hashExtImageIdMap = new HashMap<>();
+        Set<String> savedHashExtSet = new HashSet<>();  //
+        List<SysFile> saveSysFiles = new ArrayList<>();
+        for (Map.Entry<String, String> entry : urlHashExtMap.entrySet()) {
+            String url = entry.getKey();
+            String hashExt = entry.getValue();
+            if (StrUtil.isNotEmpty(hashExtIdMap.get(hashExt))) {
+                savedHashExtSet.add(hashExt);
+                hashExtImageIdMap.put(hashExt, hashExtIdMap.get(hashExt));
+            } else {
+                if (savedHashExtSet.contains(hashExt)) {
+                    //到这里说明，所有的urls中存在urls不同但是后缀和文件sha256相同
+                    //重复保存会报相同key异常
+                    continue;
+                }
+                SysFile sysFile = new SysFile();
+                String[] split = url.split("/");
+                sysFile.setFileName(split[split.length - 1]);
+                sysFile.setFileHash(hashExt.split("-")[0]);
+                sysFile.setUrl(url);
+                sysFile.setExtension(hashExt.split("-")[1]);
+                sysFile.setSize(urlSizeMap.get(url));
+                sysFile.setDelFlag(CommonConstants.DEL_NORMAL);
+                saveSysFiles.add(sysFile);
+                savedHashExtSet.add(hashExt);
+            }
+        }
+
+        if (CollectionUtil.isNotEmpty(saveSysFiles)) {
+            sysFileService.saveBatch(saveSysFiles);
+//            saveSysFiles.stream().forEach(sysfile -> result.put(sysfile.getUrl(), sysfile.getId()));
+            saveSysFiles.stream().forEach(sysfile -> hashExtIdMap.put(sysfile.getFileHash() + "-" + sysfile.getExtension(), sysfile.getId()));
+        }
+
+        Map<String, String> result = urlHashExtMap.entrySet().stream()
+                .filter(entry -> StrUtil.isNotEmpty(hashExtIdMap.get(entry.getValue())))
+                .map(entry -> {
+                            entry.setValue(hashExtIdMap.get(entry.getValue()));
+                            return entry;
+                        }
+                )
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
 
         return R.ok(result);
     }

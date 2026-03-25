@@ -9,6 +9,9 @@ management:
     web:
       exposure:
         include: 'health'    # 仅暴露健康检查
+  health:
+    elasticsearch:
+      enabled: false
 
 spring:
   servlet:

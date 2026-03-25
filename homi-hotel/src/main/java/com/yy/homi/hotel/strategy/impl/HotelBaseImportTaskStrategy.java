@@ -65,17 +65,16 @@ public class HotelBaseImportTaskStrategy implements HotelImportTaskStrategy {
             throw new ServiceException("文件不存在！");
         }
 
-        hotelImportTaskMapper.updateToRunning(taskId, HotelImportTask.STATUS_RUNNING);  //改为运行中状态
-
-
-        // 使用 List 作为缓存
-        List<Map<Integer, String>> cachedDataList = new ArrayList<>();
-        // 批次大小
-        int BATCH_SIZE = 250;
-
         try {
-            EasyExcel.read(tempFile, new ReadListener<Map<Integer, String>>() {
 
+            hotelImportTaskMapper.updateToRunning(taskId, HotelImportTask.STATUS_RUNNING);  //改为运行中状态
+
+            // 使用 List 作为缓存
+            List<Map<Integer, String>> cachedDataList = new ArrayList<>();
+            // 批次大小
+            int BATCH_SIZE = 100;
+
+            EasyExcel.read(tempFile, new ReadListener<Map<Integer, String>>() {
 
                         @Override
                         public void onException(Exception exception, AnalysisContext context) throws Exception {
@@ -214,7 +213,7 @@ public class HotelBaseImportTaskStrategy implements HotelImportTaskStrategy {
                             hotelStatsService.saveBatch(saveHotelStats);
 
                             //修改任务进度
-                            hotelImportTaskMapper.incrementProcessedCount(taskId,dataList.size());
+                            hotelImportTaskMapper.incrementProcessedCount(taskId, dataList.size());
 
                         }
                     })

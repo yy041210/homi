@@ -59,7 +59,7 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
     @Async("homiExecutor")
     @Override
     public void execute(String taskId, String filePath, String userId) {
-        log.info("开始执行酒店设备异步导入任务, TaskId: {}, File: {}", taskId, filePath);
+        log.info("开始执行酒店房型异步导入任务, TaskId: {}, File: {}", taskId, filePath);
         if (StrUtil.isEmpty(taskId) || StrUtil.isEmpty(filePath) || StrUtil.isEmpty(userId)) {
             throw new ServiceException("taskId,filePath或userId不能为空！");
         }
@@ -77,7 +77,7 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
         // 使用 List 作为缓存
         List<Map<Integer, String>> cachedDataList = new ArrayList<>();
         // 批次大小
-        int BATCH_SIZE = 1000;
+        int BATCH_SIZE = 50;
 
         try {
             EasyExcel.read(filePath, new ReadListener<Map<Integer, String>>() {
@@ -124,7 +124,9 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                             Set<String> allHotelIds = hotelBaseMapper.selectList(null).stream().map(HotelBase::getId).collect(Collectors.toSet());
                             //查询所有酒店上传的图集
                             List<HotelAlbum> existHotelAlbums = hotelAlbumMapper
-                                    .selectList(new LambdaQueryWrapper<HotelAlbum>().eq(HotelAlbum::getSource, AlbumSourceEnum.HOTEL.getCode()));
+                                    .selectList(new LambdaQueryWrapper<HotelAlbum>()
+                                            .eq(HotelAlbum::getSource, AlbumSourceEnum.HOTEL.getCode()) //酒店上传
+                                    );
                             //查询所有房间
                             Set<String> allHotelIdRoomId = hotelRoomService.list().stream().map(hotelRoom -> hotelRoom.getHotelId() + "_" + hotelRoom.getId()).collect(Collectors.toSet());
 
@@ -162,6 +164,7 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                     if (StrUtil.isEmpty(imageUrl)) {
                                         continue;
                                     }
+                                    //hotelId + imageUrl + roomId + 酒店上传唯一
                                     List<HotelAlbum> existSameHotelAlbum = existHotelAlbums.stream()
                                             .filter(item -> item.getHotelId().equals(hotelId))
                                             .filter(item -> item.getImageUrl().equals(imageUrl))
@@ -170,6 +173,7 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                     if (CollectionUtil.isNotEmpty(existSameHotelAlbum)) {
                                         continue;
                                     }
+
 
                                     List<HotelAlbum> hotelAlbumList = existHotelAlbums.stream()
                                             .filter(item -> item.getHotelId().equals(hotelId))
@@ -206,13 +210,13 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                 hotelRoom.setName(roomName);
                                 String areaNumStr = area.replaceAll("平方米", "");
                                 hotelRoom.setAreaUnit("平方米");
-                                if(areaNumStr.contains("-")){
+                                if(areaNumStr.contains("–")){
                                     //10-20平方米
-                                    int minArea = Integer.parseInt(areaNumStr.split("-")[0]);
-                                    int maxArea = Integer.parseInt(areaNumStr.split("-")[1]);
+                                    int minArea = Integer.parseInt(areaNumStr.split("–")[0]);
+                                    int maxArea = Integer.parseInt(areaNumStr.split("–")[1]);
                                     hotelRoom.setMinArea(minArea);
                                     hotelRoom.setMaxArea(maxArea);
-                                    hotelRoom.setArea(minArea+"-"+maxArea+"平方米");
+                                    hotelRoom.setArea(minArea+"–"+maxArea+"平方米");
                                 }else {
                                     //10平方米
                                     int areaNum = Integer.parseInt(areaNumStr);
@@ -253,8 +257,14 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                             hotelAlbums.stream()
                                     .filter(hotelAlbum -> urlFileIdMap.get(hotelAlbum.getImageUrl()) != null)
                                     .forEach(hotelAlbum -> hotelAlbum.setImageId(urlFileIdMap.get(hotelAlbum.getImageUrl())));
-                            hotelAlbumService.saveBatch(hotelAlbums);
-                            hotelAlbumService.updateBatchById(updateHotelAlums);
+
+                            if(CollectionUtil.isNotEmpty(hotelAlbums)){
+                                hotelAlbumService.saveBatch(hotelAlbums);
+                            }
+
+                            if(CollectionUtil.isNotEmpty(updateHotelAlums)){
+                                hotelAlbumService.updateBatchById(updateHotelAlums);
+                            }
 
                             hotelImportTaskMapper.incrementProcessedCount(taskId, dataList.size());
                         }
@@ -262,11 +272,13 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                     .sheet()
                     .headRowNumber(1)  //不要表头
                     .doRead();
-        } finally {
+        }catch (Exception e){
+            hotelImportTaskMapper.updateToFailed(taskId,HotelImportTask.STATUS_FAILED,e.getMessage());
+            throw new RuntimeException(e);
+        }finally {
             //删除临时文件
             tempFile.delete();
         }
-
 
     }
 }

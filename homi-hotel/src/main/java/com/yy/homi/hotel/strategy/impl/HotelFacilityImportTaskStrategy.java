@@ -80,7 +80,7 @@ public class HotelFacilityImportTaskStrategy implements HotelImportTaskStrategy 
             // 使用 List 作为缓存
             List<Map<Integer, String>> cachedDataList = new ArrayList<>();
             // 批次大小
-            int BATCH_SIZE = 1000;
+            int BATCH_SIZE = 100;
             EasyExcel.read(filePath, new ReadListener<Map<Integer, String>>() {
                         @Override
                         public void invoke(Map<Integer, String> data, AnalysisContext context) {

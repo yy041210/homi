@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Mapper
@@ -16,4 +17,6 @@ public interface SysFileMapper extends BaseMapper<SysFile> {
 
     @Select("select * from sys_file where file_hash = #{fileHash} and extension=#{extension} and del_flag = 0 limit 1")
     SysFile findOneFileAndExtension(String fileHash, String extension);
+
+    List<SysFile> selectInHashExtList(@Param("hashExtList") ArrayList<String> hashExtList);
 }

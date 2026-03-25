@@ -64,7 +64,7 @@ public class HotelRoomFacilityImportTaskStrategy implements HotelImportTaskStrat
         // 使用 List 作为缓存
         List<Map<Integer, String>> cachedDataList = new ArrayList<>();
         // 批次大小
-        int BATCH_SIZE = 1000;
+        int BATCH_SIZE = 50;
 
         //查询所有roomId
         Set<String> allRoomIds = hotelRoomMapper.selectList(null).stream().map(HotelRoom::getId).collect(Collectors.toSet());

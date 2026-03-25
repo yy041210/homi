@@ -96,7 +96,6 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
 
             if (taskType.equals("HOTEL_FACILITY")) {
                 //酒店设备，7列
-                // 2. 只读取文件头
                 CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
@@ -107,7 +106,6 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                 }
             } else if (taskType.equals("HOTEL_ROOM")) {
                 //酒店基本房型，12列
-                // 2. 只读取文件头
                 CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
@@ -118,7 +116,6 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                 }
             } else if (taskType.equals("HOTEL_INTRODUCTION")) {
                 //酒店简介相关内容，5列
-                // 2. 只读取文件头
                 CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
@@ -129,7 +126,6 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                 }
             } else if (taskType.equals("HOTEL_COMMENT")) {
                 //酒店评论相关内容，12列
-                // 2. 只读取文件头
                 CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
@@ -138,9 +134,8 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                         return R.fail("csv文件格式不正确！");
                     }
                 }
-            }else if (taskType.equals("HOTEL_ROOM_FACILITY")) {
+            } else if (taskType.equals("HOTEL_ROOM_FACILITY")) {
                 //酒店房型关联设备
-                //只读取文件头
                 CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
@@ -149,14 +144,32 @@ public class HotelImportTaskServiceImpl extends ServiceImpl<HotelImportTaskMappe
                         return R.fail("csv文件格式不正确！");
                     }
                 }
-            }
-            else if (taskType.equals("HOTEL_BASE")) {
-                //酒店基本信息
-                //只读取文件头
+            } else if (taskType.equals("HOTEL_BASE")) {
+                //酒店基本信息 15列
                 CsvData csvData = gbk;
                 if (csvData.getRowCount() > 0) {
                     int columnCount = csvData.getRow(0).getFieldCount();
                     if (columnCount != 15) {
+                        destFile.delete();
+                        return R.fail("csv文件格式不正确！");
+                    }
+                }
+            } else if (taskType.equals("HOTEL_ALBUM")) {
+                //酒店图集信息 6列
+                CsvData csvData = gbk;
+                if (csvData.getRowCount() > 0) {
+                    int columnCount = csvData.getRow(0).getFieldCount();
+                    if (columnCount != 6) {
+                        destFile.delete();
+                        return R.fail("csv文件格式不正确！");
+                    }
+                }
+            } else if (taskType.equals("HOTEL_SURROUNDING")) {
+                //酒店周边信息 8列
+                CsvData csvData = gbk;
+                if (csvData.getRowCount() > 0) {
+                    int columnCount = csvData.getRow(0).getFieldCount();
+                    if (columnCount != 8) {
                         destFile.delete();
                         return R.fail("csv文件格式不正确！");
                     }
