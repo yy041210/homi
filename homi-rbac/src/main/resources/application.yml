@@ -43,6 +43,12 @@ spring:
   redis:
     host: localhost
     port: 6379
+  rabbitmq:
+    port: 5672
+    username: homi
+    password: homi
+    virtual-host: /homi
+
 
 #springdoc
 springdoc:
