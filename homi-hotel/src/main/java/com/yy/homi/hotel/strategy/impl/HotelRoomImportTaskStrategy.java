@@ -221,7 +221,7 @@ public class HotelRoomImportTaskStrategy implements HotelImportTaskStrategy {
                                     //10平方米
                                     int areaNum = Integer.parseInt(areaNumStr);
                                     hotelRoom.setMinArea(areaNum);
-                                    hotelRoom.setMinArea(areaNum);
+                                    hotelRoom.setMaxArea(areaNum);
                                     hotelRoom.setArea(areaNum+"平方米");
                                 }
 

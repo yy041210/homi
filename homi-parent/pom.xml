@@ -46,6 +46,7 @@
         <kaptcha.version>2.3.2</kaptcha.version>
         <springdoc.version>1.7.0</springdoc.version>
         <easyexcel.version>3.3.3</easyexcel.version>
+        <elasticsearch.version>7.4.2</elasticsearch.version>
     </properties>
 
     <dependencyManagement>
@@ -124,6 +125,18 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-devtools</artifactId>
                 <version>${spring-boot.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                <version>${elasticsearch.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>${elasticsearch.version}</version>
             </dependency>
 
             <dependency>

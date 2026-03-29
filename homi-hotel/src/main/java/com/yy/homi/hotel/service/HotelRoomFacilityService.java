@@ -1,6 +1,7 @@
 package com.yy.homi.hotel.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.entity.HotelRoomFacility;
 import java.util.List;
 
@@ -15,4 +16,7 @@ public interface HotelRoomFacilityService extends IService<HotelRoomFacility> {
      * @return 设施列表
      */
     List<HotelRoomFacility> getByRoomId(String roomId);
+
+    R getHotelRoomFacilityFilters();
+
 }

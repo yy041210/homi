@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 酒店设施 Service 实现类
@@ -128,5 +130,11 @@ public class HotelFacilityServiceImpl extends ServiceImpl<HotelFacilityMapper, H
             hotelFacilityMapper.changeStatus(id,newStatus);
             return R.ok("启用成功！");
         }
+    }
+
+    @Override
+    public R getHotelFacilityFilters() {
+        List<Map<String, Integer>> result = hotelFacilityMapper.getTopFacilityFilters();
+        return R.ok(result);
     }
 }

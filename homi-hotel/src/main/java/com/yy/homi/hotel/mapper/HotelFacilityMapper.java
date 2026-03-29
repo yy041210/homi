@@ -6,6 +6,7 @@ import com.yy.homi.hotel.domain.entity.HotelFacility;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface HotelFacilityMapper extends BaseMapper<HotelFacility> {
@@ -21,4 +22,7 @@ public interface HotelFacilityMapper extends BaseMapper<HotelFacility> {
 
     @Update("update hotel_facility set status = #{newStatus} where id = #{id}")
     int changeStatus(@Param("id") String id,@Param("newStatus") Integer newStatus);
+
+    @Select("SELECT name, COUNT(*) as count FROM hotel_facility GROUP BY name ORDER BY count DESC LIMIT 20")
+    List<Map<String, Integer>> getTopFacilityFilters();
 }

@@ -28,4 +28,10 @@ public class HotelFacilityController {
     public R changeStatus(@RequestParam("id") @NotBlank(message = "设备id不能为空！")String id) {
         return hotelFacilityService.changeStatus(id);
     }
+
+    @Operation(summary = "获取全量酒店设施筛选器")
+    @GetMapping("/getHotelFacilityFilters")
+    public R getHotelFacilityFilters() {
+        return hotelFacilityService.getHotelFacilityFilters();
+    }
 }

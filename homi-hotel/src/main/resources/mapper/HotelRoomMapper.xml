@@ -17,6 +17,7 @@
         <result column="smoke" property="smoke"/>
         <result column="max_occupancy" property="maxOccupancy"/>
         <result column="highlight_fields" property="highlightFields"/>
+        <result column="price" property="price"/>
         <result column="status" property="status"/>
         <result column="create_by" property="createBy"/>
         <result column="create_time" property="createTime"/>
@@ -26,7 +27,7 @@
 
     <sql id="Base_Column_List">
         id
-        , hotel_id, name, area,min_area,max_area floor, area_unit,bed_type, window, wifi, smoke, max_occupancy, highlight_fields,status, create_by, create_time, update_by, update_time
+        , hotel_id, name, area,min_area,max_area floor, area_unit,bed_type, window, wifi, smoke, max_occupancy, highlight_fields,status,price, create_by, create_time, update_by, update_time
     </sql>
 
 </mapper>

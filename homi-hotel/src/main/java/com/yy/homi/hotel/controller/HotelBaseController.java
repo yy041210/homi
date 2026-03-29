@@ -2,6 +2,7 @@ package com.yy.homi.hotel.controller;
 
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.HotelBasePageListReqDTO;
+import com.yy.homi.hotel.domain.dto.request.HotelDocPageListReqDTO;
 import com.yy.homi.hotel.domain.dto.request.HotelInsertDTO;
 import com.yy.homi.hotel.service.HotelBaseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.util.List;
 
 
 @Validated
@@ -68,5 +71,30 @@ public class HotelBaseController {
     public R changeStatus(@RequestParam("id") @NotBlank(message = "酒店id不能为空!") String id){
         return hotelBaseService.changeStatus(id);
     }
+
+    @PostMapping("/searchPageList")
+    public R searchPageList(@RequestBody HotelDocPageListReqDTO reqDTO){
+        return hotelBaseService.searchPageList(reqDTO);
+    }
+
+    @GetMapping("/suggestion")
+    public R suggestion(@RequestParam("key") @NotBlank(message = "关键词不能为空！") String key) throws IOException {
+        return hotelBaseService.suggestion(key);
+    }
+
+    /**
+     * 获取酒店及房型设施筛选器
+     * 效果：根据当前搜索词、城市等条件，动态聚合出可用的设施标签
+     */
+    @GetMapping("/getHotelFacilityFilters")
+    public R getHotelFacilityFilters() {
+        return hotelBaseService.getHotelFacilityFilters();
+    }
+
+    @GetMapping("/syncHotelDocFromDB")
+    public R syncHotelDocFromDB(){
+        return hotelBaseService.syncHotelDocFromDB();
+    }
+
 
 }

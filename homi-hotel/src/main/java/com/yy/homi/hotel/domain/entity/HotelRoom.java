@@ -32,6 +32,7 @@ public class HotelRoom {
     private String smoke;  // 禁烟 | 可吸烟 | ..
     private Integer maxOccupancy; //最大可住人数
     private String highlightFields; //高亮字段 wifi,window
+    private Double price;
     private Integer status;
 
 
