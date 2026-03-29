@@ -1,6 +1,8 @@
 package com.yy.homi.rbac.controller;
 
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.rbac.domain.dto.request.LoginReqDTO;
 import com.yy.homi.rbac.service.AuthService;
 import com.yy.homi.rbac.strategy.context.LoginStrategyContext;
@@ -30,6 +32,7 @@ public class AuthController {
     @Operation(summary = "用户统一登录", description = "支持账号密码、手机号多种登录方式")
     @ResponseBody
     @PostMapping("/login")
+    @AutoLog(title = "系统-用户统一登录",businessType = BusinessType.OTHER)
     public R login(@Validated @RequestBody LoginReqDTO loginReqDTO){
         return loginStrategyContext.login(loginReqDTO);
     }
