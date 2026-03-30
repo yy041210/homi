@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.hotel.mapper.UserActionLogMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.UserActionLog">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="hotel_id" property="hotelId" />
+        <result column="hotel_name" property="hotelName" />
+        <result column="star" property="star" />
+        <result column="room_id" property="roomId" />
+        <result column="room_name" property="roomName" />
+        <result column="show_price" property="showPrice" />
+        <result column="action_type" property="actionType" />
+        <result column="action_weight" property="actionWeight" />
+        <result column="city_id" property="cityId" />
+        <result column="city_name" property="cityName" />
+        <result column="comment_score" property="commentScore" />
+        <result column="hotel_tags" property="hotelTags" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <!-- 通用查询列 -->
+    <sql id="Base_Column_List">
+        id, user_id, hotel_id, hotel_name, star, room_id, room_name,
+        show_price, action_type, action_weight, city_id, city_name,
+        comment_score, hotel_tags, create_time
+    </sql>
+
+    <!--  获取用户最感兴趣的TopN城市 -->
+    <select id="selectFavoriteCities" resultType="java.lang.String">
+        SELECT city_id
+        FROM user_action_log
+        WHERE user_id = #{userId}
+        GROUP BY city_id
+        ORDER BY SUM(action_weight) DESC
+            LIMIT #{limit}
+    </select>
+
+</mapper>

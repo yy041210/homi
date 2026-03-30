@@ -103,6 +103,8 @@ public class HotelDoc {
 
 
     //房型数据
+    @Field(type = FieldType.Keyword)
+    private String roomId;
     @Field(type = FieldType.Text, analyzer = "ik_max_word", copyTo = "all")
     private String roomName;
 
@@ -168,6 +170,7 @@ public class HotelDoc {
                 .districtId(hotelBase.getDistrictId())
 //                .districtName(base.getDistrictName())
                 // 房型具体数据
+                .roomId(hotelRoom.getId())
                 .roomName(hotelRoom.getName())
                 .bedType(hotelRoom.getBedType())
                 .maxOccupancy(hotelRoom.getMaxOccupancy())
