@@ -11,6 +11,11 @@ import java.util.Date;
 @Data
 @TableName("user_action_log")
 public class UserActionLog implements Serializable {
+
+    public static final String VIEW_ACTION = "VIEW_DETAIL";
+    public static final String FAVORITE_ACTION = "FAVORITE"; //收藏
+    public static final String CLICK_TRIP_ACTION = "CLICK_TRIP"; //跳转携程
+
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
     private String userId;
@@ -26,14 +31,13 @@ public class UserActionLog implements Serializable {
     private Double showPrice;       // 搜索页显示的那个房型价格
 
     // --- 行为属性 ---
-    private String actionType;      // VIEW（浏览）, FAVORITE（收藏）, CLICK_TRIP（跳转携程），
+    private String actionType;      // VIEW_DETAIL（浏览）, FAVORITE（收藏）, CLICK_TRIP（跳转携程），
     private Double actionWeight;    // 权重分
 
     // --- 酒店综合特征 ---
     private String cityId;
     private String cityName;
     private Double commentScore;    // 酒店综合评分
-    private String hotelTags;       // 酒店标签：停车场, 健身房 (从 facilities 提取)
 
     private Date createTime;
 
@@ -47,11 +51,11 @@ public class UserActionLog implements Serializable {
         }
 
         switch (actionType.toUpperCase()) {
-            case "VIEW":
+            case VIEW_ACTION:
                 return 1.0;
-            case "FAVORITE":
+            case FAVORITE_ACTION:
                 return 5.0;
-            case "CLICK_TRIP":
+            case CLICK_TRIP_ACTION:
                 return 8.0;
             default:
                 return 0.0;

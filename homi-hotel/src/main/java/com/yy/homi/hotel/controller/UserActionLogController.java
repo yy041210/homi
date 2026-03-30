@@ -6,10 +6,9 @@ import com.yy.homi.hotel.service.UserActionLogService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.constraints.NotBlank;
 
 @Slf4j
 @Validated
@@ -24,6 +23,13 @@ public class UserActionLogController {
     public R insertLog(@Validated @RequestBody UserActionLogInsertReqDTO reqDTO){
         log.info("userActionLogService is: {}", userActionLogService); // 查看是否为 null
         return userActionLogService.insertLog(reqDTO);
+    }
+
+    @GetMapping("/getViewHistory")
+    public R getViewHistory(@Validated @RequestParam("userId") @NotBlank(message = "userId不能为空！") String userId,
+                            @RequestParam(value = "pageNum",defaultValue = "1") Integer pageNum,
+                            @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
+        return userActionLogService.getViewHistory(userId,pageNum,pageSize);
     }
 
 }

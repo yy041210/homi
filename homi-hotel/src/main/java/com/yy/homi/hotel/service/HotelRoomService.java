@@ -15,4 +15,6 @@ public interface HotelRoomService extends IService<HotelRoom> {
     R deleteByIds(List<String> ids);
 
     R changeStatus(String id);
+
+    R getInfoById(String id);
 }

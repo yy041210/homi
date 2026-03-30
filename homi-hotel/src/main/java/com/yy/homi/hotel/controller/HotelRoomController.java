@@ -41,4 +41,9 @@ public class HotelRoomController {
         return hotelRoomService.changeStatus(id);
     }
 
+    @GetMapping("/getInfoById")
+    public R getInfoById(@RequestParam("id") @NotBlank(message = "房型id不能为空！") String id){
+        return hotelRoomService.getInfoById(id);
+    }
+
 }

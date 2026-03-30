@@ -14,7 +14,9 @@ import com.yy.homi.common.enums.hotel.AlbumSourceEnum;
 import com.yy.homi.hotel.domain.dto.request.HotelRoomPageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelAlbum;
 import com.yy.homi.hotel.domain.entity.HotelRoom;
+import com.yy.homi.hotel.domain.entity.HotelRoomFacility;
 import com.yy.homi.hotel.mapper.HotelAlbumMapper;
+import com.yy.homi.hotel.mapper.HotelRoomFacilityMapper;
 import com.yy.homi.hotel.mapper.HotelRoomMapper;
 import com.yy.homi.hotel.service.HotelRoomService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,8 @@ public class HotelRoomServiceImpl extends ServiceImpl<HotelRoomMapper, HotelRoom
     private HotelAlbumMapper hotelAlbumMapper;
     @Autowired
     private HotelRoomMapper hotelRoomMapper;
+    @Autowired
+    private HotelRoomFacilityMapper hotelRoomFacilityMapper;
 
     @Override
     public R pageList(HotelRoomPageListReqDTO reqDTO) {
@@ -146,20 +150,62 @@ public class HotelRoomServiceImpl extends ServiceImpl<HotelRoomMapper, HotelRoom
         }
 
         HotelRoom hotelRoom = hotelRoomMapper.selectById(id);
-        if(hotelRoom == null){
+        if (hotelRoom == null) {
             return R.fail("房型id对应房型不存在！");
         }
 
         Integer status = hotelRoom.getStatus();
         Integer newStatus = 0;
-        if(status == newStatus){
+        if (status == newStatus) {
             newStatus = 1;
-            hotelRoomMapper.changeStatus(id,newStatus);
+            hotelRoomMapper.changeStatus(id, newStatus);
             return R.ok("禁用成功！");
-        }else {
-            hotelRoomMapper.changeStatus(id,newStatus);
+        } else {
+            hotelRoomMapper.changeStatus(id, newStatus);
             return R.ok("启用成功！");
         }
 
+    }
+
+    @Override
+    public R getInfoById(String id) {
+        if (StrUtil.isBlank(id)) {
+            return R.fail("房型id不能为空！");
+
+        }
+
+        //房型基本信息
+        HotelRoom hotelRoom = hotelRoomMapper.selectById(id);
+        if(hotelRoom == null){
+            return R.fail("房型id对应房型不存在！");
+        }
+
+
+        JSONObject result = JSON.parseObject(JSON.toJSONString(hotelRoom));
+
+        //房型图集(酒店上传 + 房型id匹配)
+        List<HotelAlbum> hotelAlbums = hotelAlbumMapper.selectList(new LambdaQueryWrapper<HotelAlbum>()
+                .eq(HotelAlbum::getSource, AlbumSourceEnum.HOTEL.getCode())
+                .eq(HotelAlbum::getRoomId, id)
+                .orderByAsc(HotelAlbum::getSeq)
+        );
+
+        List<String> imageUrls = hotelAlbums.stream().map(HotelAlbum::getImageUrl).collect(Collectors.toList());
+        result.put("imageUrls",imageUrls);
+
+        //房型设备
+        List<HotelRoomFacility> hotelRoomFacilities = hotelRoomFacilityMapper.selectList(new LambdaQueryWrapper<HotelRoomFacility>()
+                .eq(HotelRoomFacility::getRoomId, id)
+                .orderByAsc(HotelRoomFacility::getSeq)
+        );
+
+        Map<String, List<HotelRoomFacility>> hotelRoomFacilityList= hotelRoomFacilities.stream().collect(Collectors.groupingBy(
+                HotelRoomFacility::getFacilityType,
+                Collectors.toList()
+        ));
+
+        result.put("hotelRoomFacilityList",hotelRoomFacilityList);
+
+        return R.ok(result);
     }
 }

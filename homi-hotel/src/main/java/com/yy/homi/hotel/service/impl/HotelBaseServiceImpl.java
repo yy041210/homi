@@ -562,6 +562,9 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                 jsonObject.put("roomId", roomId);
                 jsonObject.put("name", hotelRoom.getName());
                 jsonObject.put("area", hotelRoom.getArea());
+                jsonObject.put("minArea",hotelRoom.getMinArea());
+                jsonObject.put("maxArea",hotelRoom.getMaxArea());
+                jsonObject.put("areaUnit",hotelRoom.getAreaUnit());
                 jsonObject.put("floor", hotelRoom.getFloor());
                 jsonObject.put("bedType", hotelRoom.getBedType());
                 jsonObject.put("window", hotelRoom.getWindow());
@@ -570,6 +573,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                 jsonObject.put("maxOccupancy", hotelRoom.getMaxOccupancy());
                 jsonObject.put("highlightFields", hotelRoom.getHighlightFields());
                 jsonObject.put("status", hotelRoom.getStatus());
+                jsonObject.put("price",hotelRoom.getPrice());
                 List<String> imageUrls = idImageUrlsMap.get(roomId);
                 jsonObject.put("imageUrls", imageUrls);
                 hotelRoomJsonList.add(jsonObject);

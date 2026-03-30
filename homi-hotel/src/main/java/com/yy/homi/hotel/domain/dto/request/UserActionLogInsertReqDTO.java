@@ -42,12 +42,7 @@ public class UserActionLogInsertReqDTO implements Serializable {
     @Schema(description = "城市ID", example = "310100")
     private String cityId;
 
-    @Schema(description = "城市名称", example = "上海")
-    private String cityName;
-
     @Schema(description = "酒店综合评分", example = "4.8")
     private Double commentScore;
 
-    @Schema(description = "酒店标签(多个逗号隔开)", example = "停车场,健身房,双早")
-    private String hotelTags;
 }
