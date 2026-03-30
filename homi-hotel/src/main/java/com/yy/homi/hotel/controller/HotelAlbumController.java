@@ -12,14 +12,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.validation.constraints.NotBlank;
 
 /**
  * 酒店相册控制器
  * 提供酒店相册数据的导入功能
  */
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/hotelalbum")
 @Tag(name = "酒店相册管理", description = "酒店相册相关接口，支持CSV数据导入等功能")
@@ -39,4 +43,10 @@ public class HotelAlbumController {
     public R importHotelAlbumFromCsv(@RequestParam("file") MultipartFile file) {
         return hotelAlbumService.importHotelAlbumFromCsv(file);
     }
+
+    @GetMapping("/getAlbumByHotelId")
+    public R getAlbumByHotelId(@RequestParam("hotelId") @NotBlank(message = "酒店id不能为空！") String hotelId){
+        return hotelAlbumService.getAlbumByHotelId(hotelId);
+    }
+
 }

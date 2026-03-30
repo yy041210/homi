@@ -7,4 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface HotelAlbumService extends IService<HotelAlbum> {
     R importHotelAlbumFromCsv(MultipartFile file);
+
+    R getAlbumByHotelId(String hotelId);
+
 }

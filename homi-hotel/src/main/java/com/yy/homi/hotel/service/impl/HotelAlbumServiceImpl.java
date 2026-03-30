@@ -1,6 +1,8 @@
 package com.yy.homi.hotel.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
+import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
@@ -242,6 +244,35 @@ public class HotelAlbumServiceImpl extends ServiceImpl<HotelAlbumMapper, HotelAl
         result.put("successList", successList);
         result.put("errorList", errorList);
         result.put("message", message);
+
+        return R.ok(result);
+    }
+
+    @Override
+    public R getAlbumByHotelId(String hotelId) {
+        //根据酒店id查询图集信息
+
+        List<HotelAlbum> hotelAlbums = hotelAlbumMapper.selectList(new LambdaQueryWrapper<HotelAlbum>()
+                .eq(HotelAlbum::getHotelId, hotelId).orderByAsc(HotelAlbum::getSeq));
+
+        if (CollectionUtil.isEmpty(hotelAlbums)) {
+            return R.ok(new TreeMap<>());
+        }
+
+        TreeMap<Integer, Map<Integer, List<HotelAlbum>>> result = hotelAlbums.stream().collect(Collectors.groupingBy(
+                HotelAlbum::getSource,
+                TreeMap::new,
+                Collectors.groupingBy(
+                        HotelAlbum::getCategory,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                list -> {
+                                    list.sort(Comparator.comparing(HotelAlbum::getSeq));
+                                    return list;
+                                })
+                )
+        ));
+
 
         return R.ok(result);
     }
