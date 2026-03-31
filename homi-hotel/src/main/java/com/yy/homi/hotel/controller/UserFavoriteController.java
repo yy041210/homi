@@ -34,4 +34,17 @@ public class UserFavoriteController {
                     @RequestParam("hotelId") @NotBlank(message = "hotelId不能为空！") String hotelId) {
         return favoriteService.checkFavoriteStatus(userId, hotelId);
     }
+
+    @GetMapping("/getFavorites")
+    public R getViewHistory(@Validated @RequestParam("userId") @NotBlank(message = "userId不能为空！") String userId,
+                            @RequestParam(value = "pageNum",defaultValue = "1") Integer pageNum,
+                            @RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
+        return favoriteService.getFavorites(userId,pageNum,pageSize);
+    }
+
+    @GetMapping("/countFavoriteByUserId")
+    public R countFavoriteByUserId(@RequestParam("userId") @NotBlank(message = "用户id不能为空！") String userId){
+        return favoriteService.countFavoriteByUserId(userId);
+    }
+
 }

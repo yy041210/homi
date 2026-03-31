@@ -11,4 +11,6 @@ public interface UserActionLogService extends IService<UserActionLog>{
     R insertLog(UserActionLogInsertReqDTO reqDTO);
 
     R getViewHistory(String userId, Integer pageNum, Integer pageSize);
+
+    R countViewByUserId(String userId);
 }

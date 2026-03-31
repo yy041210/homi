@@ -20,4 +20,8 @@ public interface UserFavoriteService extends IService<UserFavorite> {
      * 检查收藏状态
      */
     R checkFavoriteStatus(String userId, String hotelId);
+
+    R getFavorites(String userId, Integer pageNum, Integer pageSize);
+
+    R countFavoriteByUserId(String userId);
 }

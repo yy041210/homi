@@ -32,4 +32,9 @@ public class UserActionLogController {
         return userActionLogService.getViewHistory(userId,pageNum,pageSize);
     }
 
+    @GetMapping("/countViewByUserId")
+    public R countViewByUserId(@RequestParam("userId") @NotBlank(message = "用户id不能为空！") String userId){
+        return userActionLogService.countViewByUserId(userId);
+    }
+
 }

@@ -31,6 +31,26 @@
         <result column="create_time" property="createTime" />
     </resultMap>
 
+    <select id="countViewsByHotelIds" resultType="map">
+        SELECT
+        hotel_id AS hotelId,
+        COUNT(*) AS viewCount
+        FROM
+        user_action_log
+        <where>
+            AND action_type = 'VIEW_DETAIL'
+
+            <if test="hotelIds != null and hotelIds.size() > 0">
+                AND hotel_id IN
+                <foreach item="id" collection="hotelIds" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY
+        hotel_id
+    </select>
+
 
 
 </mapper>

@@ -141,4 +141,16 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
 
     }
 
+
+    @Override
+    public R countViewByUserId(String userId) {
+        if(StrUtil.isBlank(userId)){
+            return R.fail("用户id不能为空！");
+        }
+
+        Integer count =  userActionLogMapper.countViewByUserId(userId);
+
+        return R.ok(count);
+    }
+
 }
