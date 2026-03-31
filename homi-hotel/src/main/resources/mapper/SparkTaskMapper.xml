@@ -1,6 +1,19 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis-3-mapper.dtd" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.homi.hotel.mapper.SparkTaskMapper">
+
+    <resultMap id="BaseResultMap" type="com.yy.homi.hotel.domain.entity.SparkTask">
+        <id column="id" property="id" />
+        <result column="task_type" property="taskType" />
+        <result column="task_name" property="taskName" />
+        <result column="start_time" property="startTime" />
+        <result column="end_time" property="endTime" />
+        <result column="duration" property="duration" />
+        <result column="status" property="status" />
+        <result column="processed_records" property="processedRecords" />
+        <result column="error_msg" property="errorMsg" />
+        <result column="model_path" property="modelPath" />
+    </resultMap>
+
+
 </mapper>
