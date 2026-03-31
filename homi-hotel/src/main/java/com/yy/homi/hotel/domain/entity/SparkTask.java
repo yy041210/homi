@@ -21,8 +21,9 @@ public class SparkTask {
     public static final Integer TASK_ERROR = 2;
 
 
-    public static final String  IMAGE_PROFILING_TASK = "IMAGE_PROFILING";
+    public static final String  USER_PROFILING_TASK = "USER_PROFILING";
     public static final String  MODEL_TRAINING_TASK = "MODEL_TRAINING";
+
 
     /**
      * 任务类型：IMAGE_PROFILING, MODEL_TRAINING

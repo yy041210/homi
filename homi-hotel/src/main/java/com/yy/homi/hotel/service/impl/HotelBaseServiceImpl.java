@@ -18,6 +18,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.constant.CommonConstants;
+import com.yy.homi.common.constant.RedisConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.AddressInfoTO;
 import com.yy.homi.common.enums.hotel.AlbumCategoryEnum;
@@ -37,6 +38,7 @@ import com.yy.homi.hotel.mapper.*;
 import com.yy.homi.hotel.service.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.var;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -65,7 +67,9 @@ import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -117,6 +121,8 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
     @Autowired
     private HotelConverter hotelConverter;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
     @Autowired
     private RestHighLevelClient client;
 
@@ -562,9 +568,9 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                 jsonObject.put("roomId", roomId);
                 jsonObject.put("name", hotelRoom.getName());
                 jsonObject.put("area", hotelRoom.getArea());
-                jsonObject.put("minArea",hotelRoom.getMinArea());
-                jsonObject.put("maxArea",hotelRoom.getMaxArea());
-                jsonObject.put("areaUnit",hotelRoom.getAreaUnit());
+                jsonObject.put("minArea", hotelRoom.getMinArea());
+                jsonObject.put("maxArea", hotelRoom.getMaxArea());
+                jsonObject.put("areaUnit", hotelRoom.getAreaUnit());
                 jsonObject.put("floor", hotelRoom.getFloor());
                 jsonObject.put("bedType", hotelRoom.getBedType());
                 jsonObject.put("window", hotelRoom.getWindow());
@@ -573,7 +579,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                 jsonObject.put("maxOccupancy", hotelRoom.getMaxOccupancy());
                 jsonObject.put("highlightFields", hotelRoom.getHighlightFields());
                 jsonObject.put("status", hotelRoom.getStatus());
-                jsonObject.put("price",hotelRoom.getPrice());
+                jsonObject.put("price", hotelRoom.getPrice());
                 List<String> imageUrls = idImageUrlsMap.get(roomId);
                 jsonObject.put("imageUrls", imageUrls);
                 hotelRoomJsonList.add(jsonObject);
@@ -1053,6 +1059,57 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         }
 
     }
+
+
+    @Override
+    public R getRecommendHotelList(String userId) {
+        if (StrUtil.isBlank(userId)) {
+            return R.fail("用户id不能为空！");
+        }
+
+        //从Redis中获取模型推荐的结果
+        String recommendJson = (String) redisTemplate.opsForHash().get(RedisConstants.HOTEL.RECOMMEND_HOTEL_HASH_KEY, userId);
+        ArrayList<JSONObject> jsonObjects = JSON.parseObject(recommendJson, ArrayList.class);
+
+        if (CollectionUtil.isEmpty(jsonObjects)) {
+            //如果是空表示当前用户日志太少没有生成推荐列表
+            //默认推荐逻辑
+
+
+        }
+
+        List<String> recommendHotelIds = jsonObjects.stream().map(item -> item.getString("hotelId")).collect(Collectors.toList());
+
+        //查询酒店基本信息
+        List<HotelBase> hotelBases = hotelBaseMapper.selectBatchIds(recommendHotelIds);
+        //查询HotelStats
+        List<HotelStats> hotelStats = hotelStatsMapper.selectList(new LambdaQueryWrapper<HotelStats>().in(HotelStats::getHotelId, recommendHotelIds));
+        Map<String, HotelStats> statsIdentityMap = CollStreamUtil.toIdentityMap(hotelStats, HotelStats::getHotelId);
+        //查询酒店封面图
+        Map<String, List<HotelAlbum>> hotelAlbums = hotelAlbumMapper.selectTop5PhotosBatch(recommendHotelIds).stream().collect(Collectors.groupingBy(
+                HotelAlbum::getHotelId,
+                Collectors.toList()
+        ));
+
+
+        List<HotelVO> result = new ArrayList<>();
+        for (HotelBase hotelBase : hotelBases) {
+            HotelVO hotelVO = new HotelVO();
+            BeanUtils.copyProperties(hotelBase, hotelVO);
+            String hotelId = hotelBase.getId();
+            HotelStats stats = statsIdentityMap.get(hotelId);
+            if (stats != null) {
+                BeanUtils.copyProperties(stats, hotelVO);
+            }
+
+            List<String> imageUrls = hotelAlbums.get(hotelId).stream().map(HotelAlbum::getImageUrl).collect(Collectors.toList());
+            hotelVO.setPicUrls(imageUrls);
+            result.add(hotelVO);
+        }
+
+        return R.ok(result);
+    }
+
 
     /**
      * 提取 Bucket 中的 Key 值并转为 List

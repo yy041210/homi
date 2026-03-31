@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -15,6 +17,7 @@ public class UserActionLog implements Serializable {
     public static final String VIEW_ACTION = "VIEW_DETAIL";
     public static final String FAVORITE_ACTION = "FAVORITE"; //收藏
     public static final String CLICK_TRIP_ACTION = "CLICK_TRIP"; //跳转携程
+    public static final String SEARCH_ACTION = "SEARCH"; //搜索
 
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
@@ -28,6 +31,7 @@ public class UserActionLog implements Serializable {
     // --- 触发行为的房型上下文
     private String roomId;          // 房型id
     private String roomName;        // 房型名称
+    private String bedType;         // 床型
     private Double showPrice;       // 搜索页显示的那个房型价格
 
     // --- 行为属性 ---
@@ -37,7 +41,19 @@ public class UserActionLog implements Serializable {
     // --- 酒店综合特征 ---
     private String cityId;
     private String cityName;
-    private Double commentScore;    // 酒店综合评分
+    private Float hygieneScore;  //卫生得分
+    private Float deviceScore;  //设施得分
+    private Float environmentScore;  //环境得分
+    private Float serviceScore;  //服务得分
+    private Float commentScore;    // 酒店综合评分
+    private Integer maxOccupancy;  //最大可住人数
+    private Integer minArea;   //最小面积
+    private Integer maxArea;   //最大面积
+    private String location;  //经纬度  34.123,111.54
+
+    //搜索操作独有
+    private String hotelFacilities;  //设施1，设施2
+    private String roomFacilities;   //设施1，设施2
 
     private Date createTime;
 

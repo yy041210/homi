@@ -11,11 +11,17 @@ import com.github.pagehelper.PageHelper;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.convert.UserActionLogConverter;
 import com.yy.homi.hotel.domain.dto.request.UserActionLogInsertReqDTO;
+import com.yy.homi.hotel.domain.entity.HotelAlbum;
 import com.yy.homi.hotel.domain.entity.HotelBase;
+import com.yy.homi.hotel.domain.entity.HotelStats;
 import com.yy.homi.hotel.domain.entity.UserActionLog;
+import com.yy.homi.hotel.domain.vo.HotelVO;
+import com.yy.homi.hotel.mapper.HotelAlbumMapper;
 import com.yy.homi.hotel.mapper.HotelBaseMapper;
+import com.yy.homi.hotel.mapper.HotelStatsMapper;
 import com.yy.homi.hotel.mapper.UserActionLogMapper;
 import com.yy.homi.hotel.service.UserActionLogService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +36,10 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
 
     @Autowired
     private HotelBaseMapper hotelBaseMapper;
+    @Autowired
+    private HotelAlbumMapper hotelAlbumMapper;
+    @Autowired
+    private HotelStatsMapper hotelStatsMapper;
     @Autowired
     private UserActionLogMapper userActionLogMapper;
     @Autowired
@@ -84,18 +94,45 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
         Set<String> hotelIds = userActionLogs.stream().map(UserActionLog::getHotelId).collect(Collectors.toSet());
 
         List<HotelBase> hotelBases = hotelBaseMapper.selectBatchIds(hotelIds);
-        Map<String, HotelBase> identityMap = CollStreamUtil.toIdentityMap(hotelBases, HotelBase::getId);
 
+        List<HotelStats> hotelStats = hotelStatsMapper.selectList(new LambdaQueryWrapper<HotelStats>().in(HotelStats::getHotelId, hotelIds));
+        Map<String, HotelStats> statsIdentityMap = CollStreamUtil.toIdentityMap(hotelStats, HotelStats::getHotelId);
+
+        Map<String, List<HotelAlbum>> hotelAlbumsIdMap = hotelAlbumMapper.selectTop5PhotosBatch(new ArrayList<>(hotelIds)).stream().collect(Collectors.groupingBy(
+                HotelAlbum::getHotelId,
+                Collectors.toList()
+        ));
+
+        List<HotelVO> hotelVOS = new ArrayList<>();
+        for (HotelBase hotelBase : hotelBases) {
+            HotelVO hotelVO = new HotelVO();
+            BeanUtils.copyProperties(hotelBase,hotelVO);
+            String hotelId = hotelBase.getId();
+            HotelStats stats = statsIdentityMap.get(hotelId);
+            if(stats !=null){
+                BeanUtils.copyProperties(stats,hotelVO);
+            }
+
+            if(hotelAlbumsIdMap.get(hotelId) != null){
+                hotelVO.setPicUrls(hotelAlbumsIdMap.get(hotelId).stream().map(HotelAlbum::getImageUrl).collect(Collectors.toList()));
+            }else{
+                hotelVO.setPicUrls(new ArrayList<>());
+            }
+
+            hotelVOS.add(hotelVO);
+        }
+
+        Map<String, HotelVO> hotelVoIdentityMap = CollStreamUtil.toIdentityMap(hotelVOS, HotelVO::getId);
         List<JSONObject> result = new ArrayList<>();
         for (UserActionLog userActionLog : userActionLogs) {
             String hotelId = userActionLog.getHotelId();
-            HotelBase hotelBase = identityMap.get(hotelId);
-            if (hotelBase == null) {
+            HotelVO hotelVO = hotelVoIdentityMap.get(hotelId);
+            if (hotelVO == null) {
                 continue;
             }
 
             JSONObject userActionLogJson = JSON.parseObject(JSON.toJSONString(userActionLog));
-            userActionLogJson.put("hotelBase",hotelBase);
+            userActionLogJson.put("hotelVO",hotelVO);
 
             result.add(userActionLogJson);
         }

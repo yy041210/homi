@@ -11,31 +11,26 @@
         <result column="star" property="star" />
         <result column="room_id" property="roomId" />
         <result column="room_name" property="roomName" />
+        <result column="bed_type" property="bedType" />
         <result column="show_price" property="showPrice" />
         <result column="action_type" property="actionType" />
         <result column="action_weight" property="actionWeight" />
         <result column="city_id" property="cityId" />
+        <result column="hygiene_score" property="hygieneScore" />
+        <result column="device_score" property="deviceScore" />
+        <result column="environment_score" property="environmentScore" />
+        <result column="service_score" property="serviceScore" />
         <result column="city_name" property="cityName" />
         <result column="comment_score" property="commentScore" />
-        <result column="hotel_tags" property="hotelTags" />
+        <result column="max_occupancy" property="maxOccupancy" />
+        <result column="min_area" property="minArea" />
+        <result column="max_area" property="maxArea" />
+        <result column="location" property="location" />
+        <result column="hotel_facilities" property="hotelFacilities" />
+        <result column="room_facilities" property="roomFacilities" />
         <result column="create_time" property="createTime" />
     </resultMap>
 
-    <!-- 通用查询列 -->
-    <sql id="Base_Column_List">
-        id, user_id, hotel_id, hotel_name, star, room_id, room_name,
-        show_price, action_type, action_weight, city_id, city_name,
-        comment_score, hotel_tags, create_time
-    </sql>
 
-    <!--  获取用户最感兴趣的TopN城市 -->
-    <select id="selectFavoriteCities" resultType="java.lang.String">
-        SELECT city_id
-        FROM user_action_log
-        WHERE user_id = #{userId}
-        GROUP BY city_id
-        ORDER BY SUM(action_weight) DESC
-            LIMIT #{limit}
-    </select>
 
 </mapper>

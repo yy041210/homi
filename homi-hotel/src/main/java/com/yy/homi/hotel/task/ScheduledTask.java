@@ -1,6 +1,8 @@
 package com.yy.homi.hotel.task;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import com.yy.homi.common.constant.RedisConstants;
 import com.yy.homi.hotel.domain.entity.SparkTask;
 import com.yy.homi.hotel.mapper.SparkTaskMapper;
 import org.apache.spark.SparkConf;
@@ -21,6 +23,7 @@ import redis.clients.jedis.Pipeline;
 
 
 import java.io.File;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,72 +52,102 @@ public class ScheduledTask {
     @Autowired
     private SparkTaskMapper sparkTaskMapper;
 
-    //定时每天凌晨两点，根据用户近三个月的行为日志计算用户画像
+    /**
+     * 定时每天凌晨两点计算用户画像
+     */
     @Scheduled(cron = "0 0 2 * * ?")
     public void processUserProfile() {
-        // 1. 初始化日志
+        // 1. 初始化任务日志
         SparkTask taskLog = new SparkTask();
-        Date now = new Date();
-        taskLog.setTaskName("定时任务计算用户画像 : " + now.getYear() + "-" + now.getMonth() + "-" + now.getDay());
-        taskLog.setTaskType(SparkTask.MODEL_TRAINING_TASK);
+        taskLog.setTaskName("定时任务计算用户画像 : " + LocalDate.now());
+        taskLog.setTaskType(SparkTask.USER_PROFILING_TASK); // 建议增加专门的常量
         taskLog.setStartTime(new Date());
         taskLog.setStatus(SparkTask.TASK_RUNNING);
         sparkTaskMapper.insert(taskLog);
 
+        SparkSession spark = null;
         try {
+            // 2. Spark 配置 (保持你的优化参数)
             SparkConf conf = new SparkConf()
-                    .setAppName("Task-" + System.currentTimeMillis())
+                    .setAppName("UserProfileTask-" + System.currentTimeMillis())
                     .setMaster("local[1]")
                     .set("spark.sql.adaptive.enabled", "true")
                     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-                    .set("spark.kryoserializer.buffer.max", "512m")
-                    // 内存配置
-                    .set("spark.executor.memory", "4g")
-                    .set("spark.driver.memory", "2g")
-                    .set("spark.memory.fraction", "0.8")
-                    .set("spark.memory.storageFraction", "0.3")
-                    .set("spark.default.parallelism", "4")
-                    // 关键：大幅增加栈大小
                     .set("spark.executor.extraJavaOptions", "-Xss50m -XX:+UseG1GC")
                     .set("spark.driver.extraJavaOptions", "-Xss50m")
-                    // 降低ALS内部并行度
                     .set("spark.sql.shuffle.partitions", "4");
 
-            //构建sparkSession
-            SparkSession spark = SparkSession.builder().config(conf).getOrCreate();
+            spark = SparkSession.builder().config(conf).getOrCreate();
 
             Properties props = new Properties();
             props.setProperty("user", username);
             props.setProperty("password", password);
             props.setProperty("driver", "com.mysql.cj.jdbc.Driver");
             props.setProperty("fetchSize", "1000");
-            // 使用子查询实现谓词下推，仅拉取近180天数据
-            String recentDataSql = "(SELECT user_id, star, show_price, comment_score " +
+
+            // 3. 多维度数据读取 (包含你实体类中新增的评分和设施字段)
+            String recentDataSql = "(SELECT user_id, star, show_price, comment_score, " +
+                    "hygiene_score, device_score, service_score, hotel_facilities " +
                     "FROM user_action_log " +
-                    "WHERE create_time >= DATE_SUB(NOW(), INTERVAL 180 DAY)) as recent_actions";
+                    "WHERE create_time >= DATE_SUB(NOW(), INTERVAL 90 DAY)) as recent_actions";
 
             Dataset<Row> actionLogs = spark.read().jdbc(url, recentDataSql, props);
 
-            // 分组统计指标：平均星级、平均价格、平均评分
-            Dataset<Row> profileDf = actionLogs.groupBy("user_id")
+            // 4. 计算数值维度：平均星级、价格、各项评分均值
+            Dataset<Row> numericProfile = actionLogs.groupBy("user_id")
                     .agg(
-                            functions.avg("star").as("avgStar"),
-                            functions.avg("show_price").as("avgPrice"),
-                            functions.avg("comment_score").as("avgCommentScore")
+                            avg("star").as("avgStar"),
+                            avg("show_price").as("avgPrice"),
+                            avg("comment_score").as("avgScore"),
+                            avg("hygiene_score").as("avgHygiene"),
+                            avg("device_score").as("avgDevice"),
+                            avg("service_score").as("avgService")
                     );
 
-            //将分布式数据拉回到 Driver 端内存
-            List<Row> profileList = profileDf.collectAsList();
+            // 5. 计算标签维度：提取出现频率最高的前3个酒店设施
+            Dataset<Row> facilityProfile = actionLogs
+                    .withColumn("f_array", split(col("hotel_facilities"), ","))
+                    .withColumn("single_f", explode(col("f_array")))
+                    .filter("single_f != ''")
+                    .groupBy("user_id", "single_f")
+                    .count()
+                    .withColumn("rn", row_number().over(
+                            org.apache.spark.sql.expressions.Window.partitionBy("user_id").orderBy(col("count").desc())
+                    ))
+                    .filter("rn <= 3")
+                    .groupBy("user_id")
+                    .agg(collect_list("single_f").as("topFacilities"));
 
-            //Driver 端使用自动注入的 redisTemplate
+            // 6. 关联数值与标签
+            Dataset<Row> finalProfileDf = numericProfile.alias("n")
+                    .join(facilityProfile.alias("f"),
+                            functions.col("n.user_id").equalTo(functions.col("f.user_id")),
+                            "left")
+                    .drop(functions.col("f.user_id")); // 删掉多余的一列
+
+            // 7. 拉回 Driver 端写入 Redis (防止序列化异常)
+            List<Row> profileList = finalProfileDf.collectAsList();
             Map<String, String> batchMap = new HashMap<>();
+
             for (Row row : profileList) {
-                String userId = row.getString(0);
+                String userId = String.valueOf(row.get(0));
                 Map<String, Object> tags = new HashMap<>();
-                tags.put("userId",row.getString(0));
-                tags.put("prefStar", Math.round(row.getDouble(1))); //四舍五入
-                tags.put("prePrice",row.getDouble(2));
-                tags.put("preCommentScore",row.getFloat(3));
+
+                tags.put("userId", userId);
+                // 四舍五入处理星级
+                tags.put("prefStar", row.get(1) != null ? Math.round(row.getDouble(1)) : 0);
+                tags.put("prefPrice", row.get(2) != null ? row.getDouble(2) : 0.0);
+                tags.put("prefScore", row.get(3) != null ? row.getDouble(3) : 0.0);
+
+                // 品质偏好（针对你新增的评分字段）
+                tags.put("hygienePref", row.get(4) != null ? row.getDouble(4) : 0.0);
+                tags.put("devicePref", row.get(5) != null ? row.getDouble(5) : 0.0);
+                tags.put("servicePref", row.get(6) != null ? row.getDouble(6) : 0.0);
+
+                // 设施标签列表
+                tags.put("facilityTags", row.get(7) != null ? row.getList(7) : new ArrayList<>());
+
+                tags.put("updateTime", System.currentTimeMillis());
 
                 batchMap.put(userId, JSON.toJSONString(tags));
 
@@ -127,13 +160,16 @@ public class ScheduledTask {
                 redisTemplate.opsForHash().putAll("homi:user:profile", batchMap);
             }
 
+            taskLog.setStatus(SparkTask.TASK_SUCCESS);
             System.out.println(">>> 用户画像计算完成并存入 Redis");
+
         } catch (Throwable t) {
             t.printStackTrace();
             taskLog.setStatus(SparkTask.TASK_ERROR);
             String errorMsg = t.getClass().getSimpleName() + ": " + t.getMessage();
             taskLog.setErrorMsg(errorMsg.length() > 500 ? errorMsg.substring(0, 500) : errorMsg);
         } finally {
+            if (spark != null) spark.stop();
             taskLog.setEndTime(new Date());
             if (taskLog.getStartTime() != null) {
                 long seconds = (taskLog.getEndTime().getTime() - taskLog.getStartTime().getTime()) / 1000;
@@ -141,7 +177,6 @@ public class ScheduledTask {
             }
             sparkTaskMapper.updateById(taskLog);
         }
-
     }
 
     //定时每天凌晨两点，训练基于als算法的推荐模型
@@ -377,7 +412,7 @@ public class ScheduledTask {
                         // 使用Pipeline批量写入，提高性能
                         Pipeline pipeline = jedis.pipelined();
                         for (Map.Entry<String, String> entry : redisHashMap.entrySet()) {
-                            pipeline.hset("homi:hotel:recommend", entry.getKey(), entry.getValue());
+                            pipeline.hset(RedisConstants.HOTEL.RECOMMEND_HOTEL_HASH_KEY, entry.getKey(), entry.getValue());
                         }
                         pipeline.sync();
 

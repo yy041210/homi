@@ -11,4 +11,9 @@ public class RedisConstants {
     public static class THIRD{
         public static final String CHECK_CODE_PREFIX = "homi:thirdParty:checkCode:";
     }
+
+    //hotel模块的key
+    public static class HOTEL{
+        public static final String RECOMMEND_HOTEL_HASH_KEY = "homi:hotel:recommend";
+    }
 }

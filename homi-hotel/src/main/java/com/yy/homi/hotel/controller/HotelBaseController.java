@@ -97,4 +97,10 @@ public class HotelBaseController {
     }
 
 
+    @GetMapping("/getRecommendHotelList")
+    public R getRecommendHotelList(@RequestParam("userId") @NotBlank(message = "用户id不能为空！") String userId){
+        return hotelBaseService.getRecommendHotelList(userId);
+    }
+
+
 }
