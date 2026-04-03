@@ -17,6 +17,7 @@ import com.yy.homi.hotel.service.HotelCommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,12 +75,16 @@ public class HotelCommentServiceImpl extends ServiceImpl<HotelCommentMapper, Hot
         //查询关联的文件
         Set<String> commentIds = hotelComments.stream().map(HotelComment::getId).collect(Collectors.toSet());
 
-        List<HotelAlbum> hotelAlbums = hotelAlbumMapper
-                .selectList(
-                        new LambdaQueryWrapper<HotelAlbum>()
-                                .in(HotelAlbum::getCommentId, commentIds)
-                                .orderByAsc(HotelAlbum::getSeq)
-        );
+        List<HotelAlbum> hotelAlbums = new ArrayList<>();
+        if(CollectionUtil.isNotEmpty(commentIds)){
+            hotelAlbumMapper
+                    .selectList(
+                            new LambdaQueryWrapper<HotelAlbum>()
+                                    .in(HotelAlbum::getCommentId, commentIds)
+                                    .orderByAsc(HotelAlbum::getSeq)
+                    );
+        }
+
 
         if(CollectionUtil.isNotEmpty(hotelAlbums)){
             Map<String, List<String>> commentIdUrlsMap = CollStreamUtil.groupBy(

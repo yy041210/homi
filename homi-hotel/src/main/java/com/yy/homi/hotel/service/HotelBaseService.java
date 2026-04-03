@@ -39,4 +39,6 @@ public interface HotelBaseService extends IService<HotelBase> {
     R getRecommendHotelList(String userId);
 
     R countHotelByCity();
+
+    R deleteById(String id);
 }

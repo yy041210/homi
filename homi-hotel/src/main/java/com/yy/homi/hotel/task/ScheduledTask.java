@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.yy.homi.common.constant.RedisConstants;
 import com.yy.homi.hotel.domain.entity.SparkTask;
 import com.yy.homi.hotel.mapper.SparkTaskMapper;
+import org.apache.commons.io.FileUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.ml.feature.StringIndexer;
@@ -24,6 +25,7 @@ import redis.clients.jedis.Pipeline;
 
 
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -515,7 +517,17 @@ public class ScheduledTask {
         // 清理缓存
         indexedData.unpersist();
 
-    }
+        //删除检查点文件
+        try {
+            File dir = new File(checkpointDir);
+            if (dir.exists()) {
+                FileUtils.deleteDirectory(dir); // 递归删除文件夹及其所有内容
+                System.out.println(">>> 检查点文件夹已彻底清理");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
+    }
 
 }

@@ -12,4 +12,10 @@ public class RabbitMqConstants {
     public static final String USER_ACTION_LOG_EXCHANGE = "user.action.log.exchange";
     public static final String USER_ACTION_LOG_QUEUE = "user.action.log.queue";
     public static final String USER_ACTION_LOG_ROUTING_KEY = "user.action.log.routing.key";
+
+    //酒店es与mysql同步
+    public static final String HOTEL_ES_SYNC_EXCHANGE = "hotel.es.sync.exchange";
+    public static final String HOTEL_ES_SYNC_QUEUE = "hotel.es.sync.queue";
+    public static final String HOTEL_ES_SYNC_ROUTING_KEY = "hotel.es.sync.routing.key";
+
 }

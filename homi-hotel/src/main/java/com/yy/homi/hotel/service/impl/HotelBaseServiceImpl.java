@@ -18,6 +18,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.constant.CommonConstants;
+import com.yy.homi.common.constant.RabbitMqConstants;
 import com.yy.homi.common.constant.RedisConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.AddressInfoTO;
@@ -67,6 +68,7 @@ import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -111,6 +113,14 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
     @Autowired
     private HotelFacilityTypeMapper hotelFacilityTypeMapper;
     @Autowired
+    private HotelSurroundingMapper hotelSurroundingMapper;
+    @Autowired
+    private HotelCommentMapper hotelCommentMapper;
+    @Autowired
+    private UserActionLogMapper userActionLogMapper;
+    @Autowired
+    private UserFavoriteMapper userFavoriteMapper;
+    @Autowired
     private AmapLocationFeign amapLocationFeign;
     @Autowired
     private SysProvinceFeign sysProvinceFeign;
@@ -123,6 +133,8 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
 
     @Autowired
     private RedisTemplate redisTemplate;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
     @Autowired
     private RestHighLevelClient client;
 
@@ -1126,7 +1138,7 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
 
         //查询市名
         R r = sysCityFeign.getNamesByIds(cityIds);
-        if(r.getCode() != HttpStatus.OK.value()){
+        if (r.getCode() != HttpStatus.OK.value()) {
             return R.fail("远程调用根据cityIds查询市名失败！");
         }
         Map<String, String> cityIdNameMap = (Map<String, String>) r.getData();
@@ -1135,18 +1147,18 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         for (Map.Entry<String, Integer> entry : cityIdCountMap.entrySet()) {
             String cityId = entry.getKey();
             Integer count = entry.getValue();
-            if (StrUtil.isEmpty(cityId) || count == null ||  count == 0 ){
+            if (StrUtil.isEmpty(cityId) || count == null || count == 0) {
                 continue;
             }
             JSONObject jsonObject = new JSONObject();
-            jsonObject.put("cityId",cityId);
+            jsonObject.put("cityId", cityId);
             String cityName = cityIdNameMap.get(cityId);
-            if(StrUtil.isEmpty(cityName)){
+            if (StrUtil.isEmpty(cityName)) {
                 continue;
             }
-            jsonObject.put("cityName",cityName);
-            jsonObject.put("imageUrl","https://12313.jpg");
-            jsonObject.put("count",count);
+            jsonObject.put("cityName", cityName);
+            jsonObject.put("imageUrl", "https://12313.jpg");
+            jsonObject.put("count", count);
             result.add(jsonObject);
         }
 
@@ -1155,6 +1167,60 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
                 .collect(Collectors.toList());
 
         return R.ok(result);
+    }
+
+
+    @Override
+    @Transactional
+    public R deleteById(String id) {
+        if (StrUtil.isBlank(id)) {
+            return R.fail("酒店id不能为空！");
+        }
+
+        HotelBase hotelBase = hotelBaseMapper.selectById(id);
+        if (hotelBase == null) {
+            return R.fail("酒店不存在！");
+        }
+
+        //删除酒店基本信息
+        hotelBaseMapper.deleteById(id);
+
+        //删除酒店图集
+        hotelAlbumMapper.delete(new LambdaQueryWrapper<HotelAlbum>().eq(HotelAlbum::getHotelId, id));
+
+        //删除酒店评论
+        hotelCommentMapper.delete(new LambdaQueryWrapper<HotelComment>().eq(HotelComment::getHotelId, id));
+
+        //删除酒店Stats
+        hotelStatsMapper.delete(new LambdaQueryWrapper<HotelStats>().eq(HotelStats::getHotelId, id));
+
+        //删除酒店设施
+        hotelFacilityMapper.delete(new LambdaQueryWrapper<HotelFacility>().eq(HotelFacility::getHotelId, id));
+
+        //删除酒店周边
+        hotelSurroundingMapper.delete(new LambdaQueryWrapper<HotelSurrounding>().eq(HotelSurrounding::getHotelId, id));
+
+        //删除酒店房型和酒店房型设施
+        List<String> roomIds = hotelRoomMapper.selectList(new LambdaQueryWrapper<HotelRoom>().eq(HotelRoom::getHotelId, id)).stream().map(HotelRoom::getId).collect(Collectors.toList());
+        if (CollectionUtil.isNotEmpty(roomIds)) {
+            hotelRoomMapper.deleteBatchIds(roomIds);
+            hotelRoomFacilityMapper.delete(new LambdaQueryWrapper<HotelRoomFacility>().in(HotelRoomFacility::getRoomId, roomIds));
+        }
+
+        //删除用户浏览日志关于当前酒店的
+        userActionLogMapper.delete(new LambdaQueryWrapper<UserActionLog>().eq(UserActionLog::getHotelId,id));
+
+        //删除用户搜藏关于这个酒店的
+        userFavoriteMapper.delete(new LambdaQueryWrapper<UserFavorite>().eq(UserFavorite::getHotelId,id));
+
+        //发送 DELETE_ONLY消息给es删除数据
+        rabbitTemplate.convertAndSend(
+                RabbitMqConstants.HOTEL_ES_SYNC_EXCHANGE,
+                RabbitMqConstants.HOTEL_ES_SYNC_ROUTING_KEY,
+                new HotelEsSyncMessage(HotelEsSyncMessage.DELETE_ONLY_TYPE, id)
+        );
+
+        return R.ok("删除成功!");
     }
 
 

@@ -67,6 +67,14 @@ public class HotelBaseController {
         return hotelBaseService.getInfoById(id);
     }
 
+    @Operation(summary = "根据id删除酒店详情（基本信息,设备，房型，图集，简介，评论，附近）")
+    @GetMapping("/deleteById")
+    public R deleteById(@RequestParam("id") @NotBlank(message = "酒店id不能为空！") String id){
+        return hotelBaseService.deleteById(id);
+    }
+
+
+
     @GetMapping("/changeStatus")
     public R changeStatus(@RequestParam("id") @NotBlank(message = "酒店id不能为空!") String id){
         return hotelBaseService.changeStatus(id);
