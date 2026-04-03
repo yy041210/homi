@@ -1,5 +1,6 @@
 package com.yy.homi.hotel.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -14,6 +15,7 @@ import com.yy.homi.hotel.mapper.HotelFacilityTypeMapper;
 import com.yy.homi.hotel.service.HotelFacilityTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -75,4 +77,22 @@ public class HotelFacilityTypeServiceImpl extends ServiceImpl<HotelFacilityTypeM
 
         return R.ok(result);
     }
+
+
+    @Override
+    @Transactional
+    public R deleteById(String id) {
+        if(StrUtil.isBlank(id)){
+            return R.fail("设备类型id不能为空！");
+        }
+
+        //删除该类型的所有设备
+        hotelFacilityMapper.delete(new LambdaQueryWrapper<HotelFacility>().eq(HotelFacility::getHotelFacilityTypeId,id));
+
+        //删除该类型
+        hotelFacilityTypeMapper.deleteById(id);
+
+        return R.ok("删除成功！");
+    }
+
 }

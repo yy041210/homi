@@ -1,18 +1,24 @@
 package com.yy.homi.hotel.controller;
 
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.convert.HotelSurroundingConverter;
 import com.yy.homi.hotel.domain.dto.request.HotelSurroundingPageListReqDTO;
 import com.yy.homi.hotel.domain.dto.request.HotelSurroundingUpdateReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelSurrounding;
 import com.yy.homi.hotel.service.HotelSurroundingService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.constraints.NotBlank;
 import java.util.List;
 
+@Slf4j
+@Validated
 @RestController
 @RequestMapping("/hotelsurrounding")
 public class HotelSurroundingController {
@@ -57,9 +63,25 @@ public class HotelSurroundingController {
     }
 
     @PostMapping("/updateById")
-    public R updateById(@Validated @RequestBody HotelSurroundingUpdateReqDTO reqDTO){
+    public R updateById(@Validated @RequestBody HotelSurroundingUpdateReqDTO reqDTO) {
         HotelSurrounding hotelSurrounding = hotelSurroundingConverter.updateDtoToEntity(reqDTO);
         hotelSurroundingService.updateById(hotelSurrounding);
         return R.ok("修改成功！");
     }
+
+    @GetMapping("/deleteById")
+    public R deleteById(@RequestParam("id") @NotBlank(message = "周边id不能为空！") String id) {
+        hotelSurroundingService.removeById(id);
+        return R.ok("删除成功！");
+    }
+
+    @PostMapping("/deleteByIds")
+    public R deleteByIds(@RequestBody List<String> ids) {
+        if (CollectionUtil.isEmpty(ids)) {
+            return R.fail("周边ids集合不能为空！");
+        }
+        hotelSurroundingService.removeBatchByIds(ids);
+        return R.ok("删除成功！");
+    }
+
 }

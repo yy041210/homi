@@ -18,4 +18,6 @@ public interface HotelFacilityTypeService extends IService<HotelFacilityType> {
     List<HotelFacilityType> findAllEnabled();
 
     R listAll();
+
+    R deleteById(String id);
 }

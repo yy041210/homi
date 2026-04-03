@@ -36,4 +36,10 @@ public class HotelFacilityTypeController {
         hotelFacilityTypeService.updateById(HotelFacilityType.builder().id(id).name(name).icon(icon).seq(seq).build());
         return  R.ok("修改成功！");
     }
+
+    @GetMapping("/deleteById")
+    public R deleteById(@RequestParam("id") String id){
+        return hotelFacilityTypeService.deleteById(id);
+    }
+
 }

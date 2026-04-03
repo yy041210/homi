@@ -1,5 +1,6 @@
 package com.yy.homi.hotel.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.HotelFacilityPageListReqDTO;
 import com.yy.homi.hotel.service.HotelFacilityService;
@@ -25,8 +26,18 @@ public class HotelFacilityController {
     }
 
     @GetMapping("/changeStatus")
-    public R changeStatus(@RequestParam("id") @NotBlank(message = "设备id不能为空！")String id) {
+    public R changeStatus(@RequestParam("id") @NotBlank(message = "设备id不能为空！") String id) {
         return hotelFacilityService.changeStatus(id);
+    }
+
+    @Operation(summary = "根据id删除酒店设备")
+    @GetMapping("/deleteById")
+    public R deleteById(@RequestParam("id") @NotBlank(message = "设备id不能为空！") String id) {
+        if (StrUtil.isBlank(id)) {
+            return R.fail("设备id不能为空！");
+        }
+        hotelFacilityService.removeById(id);
+        return R.ok("删除成功！");
     }
 
     @Operation(summary = "获取全量酒店设施筛选器")
@@ -34,4 +45,6 @@ public class HotelFacilityController {
     public R getHotelFacilityFilters() {
         return hotelFacilityService.getHotelFacilityFilters();
     }
+
+
 }
