@@ -31,6 +31,7 @@ public class SysLogServiceImpl extends ServiceImpl<SysLogMapper, SysLog> impleme
         wrapper.like(StrUtil.isNotBlank(reqDTO.getTitle()), SysLog::getTitle, reqDTO.getTitle());
         wrapper.like(StrUtil.isNotBlank(reqDTO.getOperName()), SysLog::getOperName, reqDTO.getOperName());
         wrapper.eq(reqDTO.getStatus() != null, SysLog::getStatus, reqDTO.getStatus());
+        wrapper.eq(reqDTO.getOperType() != null, SysLog::getBusinessType, reqDTO.getOperType());
         wrapper.orderByDesc(SysLog::getOperTime);
 
         List<SysLog> list = this.list(wrapper);

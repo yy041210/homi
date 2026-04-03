@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -14,10 +12,12 @@ import java.util.Date;
 @TableName("user_action_log")
 public class UserActionLog implements Serializable {
 
-    public static final String VIEW_ACTION = "VIEW_DETAIL";
+    public static final String VIEW_ACTION = "VIEW_DETAIL"; //浏览
     public static final String FAVORITE_ACTION = "FAVORITE"; //收藏
     public static final String CLICK_TRIP_ACTION = "CLICK_TRIP"; //跳转携程
     public static final String SEARCH_ACTION = "SEARCH"; //搜索
+    public static final String EVALUATION_ACTION = "EVALUATION"; //评价
+
 
     @TableId(type = IdType.ASSIGN_ID)
     private String id;

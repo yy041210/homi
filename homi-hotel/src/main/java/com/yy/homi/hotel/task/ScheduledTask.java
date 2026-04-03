@@ -117,15 +117,15 @@ public class ScheduledTask {
                     .agg(collect_list("hotel_id").as("hotelIds"))
                     .collectAsList();
 
-            Map<String,List<String>> redisResult = new HashMap<>();
+            Map<String, List<String>> redisResult = new HashMap<>();
             for (Row row : resultList) {
                 String cityId = String.valueOf(row.get(0));
                 List<String> hotelIds = row.getList(1);
-                redisResult.put(cityId,hotelIds);
+                redisResult.put(cityId, hotelIds);
             }
 
             //存入redis
-            redisTemplate.opsForValue().set("homi:hotel:city:recommend",JSON.toJSONString(redisResult));
+            redisTemplate.opsForValue().set("homi:hotel:city:recommend", JSON.toJSONString(redisResult));
             System.out.println(">>> 热门城市榜单更新完成，处理城市数：" + resultList.size());
 
         } catch (Throwable t) {
@@ -134,9 +134,6 @@ public class ScheduledTask {
             String errorMsg = t.getClass().getSimpleName() + ": " + t.getMessage();
             taskLog.setErrorMsg(errorMsg.length() > 500 ? errorMsg.substring(0, 500) : errorMsg);
         } finally {
-            if (spark != null) {
-                spark.stop();
-            }
             taskLog.setEndTime(new Date());
             if (taskLog.getStartTime() != null) {
                 long seconds = (taskLog.getEndTime().getTime() - taskLog.getStartTime().getTime()) / 1000;
@@ -264,7 +261,6 @@ public class ScheduledTask {
             String errorMsg = t.getClass().getSimpleName() + ": " + t.getMessage();
             taskLog.setErrorMsg(errorMsg.length() > 500 ? errorMsg.substring(0, 500) : errorMsg);
         } finally {
-            if (spark != null) spark.stop();
             taskLog.setEndTime(new Date());
             if (taskLog.getStartTime() != null) {
                 long seconds = (taskLog.getEndTime().getTime() - taskLog.getStartTime().getTime()) / 1000;
@@ -304,229 +300,222 @@ public class ScheduledTask {
     }
 
 
-    private void doRecommendAlsTrain(SparkTask taskLog) throws Exception {
-        SparkSession spark = null;
+    private void doRecommendAlsTrain(SparkTask taskLog) {
+        SparkConf conf = new SparkConf()
+                .setAppName("Task-" + System.currentTimeMillis())
+                .setMaster("local[1]")
+                .set("spark.sql.adaptive.enabled", "true")
+                .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+                .set("spark.kryoserializer.buffer.max", "512m")
+                // 内存配置
+                .set("spark.executor.memory", "4g")
+                .set("spark.driver.memory", "2g")
+                .set("spark.memory.fraction", "0.8")
+                .set("spark.memory.storageFraction", "0.3")
+                .set("spark.default.parallelism", "4")
+                // 关键：大幅增加栈大小
+                .set("spark.executor.extraJavaOptions", "-Xss50m -XX:+UseG1GC")
+                .set("spark.driver.extraJavaOptions", "-Xss50m")
+                // 降低ALS内部并行度
+                .set("spark.sql.shuffle.partitions", "4");
 
-        try {
-            SparkConf conf = new SparkConf()
-                    .setAppName("Task-" + System.currentTimeMillis())
-                    .setMaster("local[1]")
-                    .set("spark.sql.adaptive.enabled", "true")
-                    .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-                    .set("spark.kryoserializer.buffer.max", "512m")
-                    // 内存配置
-                    .set("spark.executor.memory", "4g")
-                    .set("spark.driver.memory", "2g")
-                    .set("spark.memory.fraction", "0.8")
-                    .set("spark.memory.storageFraction", "0.3")
-                    .set("spark.default.parallelism", "4")
-                    // 关键：大幅增加栈大小
-                    .set("spark.executor.extraJavaOptions", "-Xss50m -XX:+UseG1GC")
-                    .set("spark.driver.extraJavaOptions", "-Xss50m")
-                    // 降低ALS内部并行度
-                    .set("spark.sql.shuffle.partitions", "4");
+        SparkSession spark = SparkSession.builder().config(conf).getOrCreate();
 
-            spark = SparkSession.builder().config(conf).getOrCreate();
-
-            // 设置checkpoint目录
-            String checkpointDir = "D:\\ideaProjects\\hom\\temp\\spark-checkpoint\\" + taskLog.getId();
-            File checkpointFile = new File(checkpointDir);
-            if (!checkpointFile.exists()) {
-                checkpointFile.mkdirs();
-            }
-            spark.sparkContext().setCheckpointDir(checkpointDir);
-
-            // 读取数据
-            Properties properties = new Properties();
-            properties.setProperty("user", username);
-            properties.setProperty("password", password);
-            properties.setProperty("driver", "com.mysql.cj.jdbc.Driver");
-            properties.setProperty("fetchSize", "1000");
-
-            Dataset<Row> rawData = spark.read().jdbc(url,
-                    "(SELECT user_id, hotel_id, action_weight FROM user_action_log WHERE action_weight > 0) as ratings",
-                    properties);
-
-            long count = rawData.count();
-            taskLog.setProcessedRecords((int) count);
-            System.out.println(">>> 读取数据完成，共 " + count + " 条记录");
-
-            // 数据采样（如果数据量太大）
-            // rawData = rawData.sample(0.1);  // 采样10%的数据进行训练
-
-            // 过滤用户行为少于5次的用户
-            Dataset<Row> userCounts = rawData.groupBy("user_id").count().filter("count >= 5");
-            // 过滤用户行为少于3次的酒店
-            Dataset<Row> hotelCounts = rawData.groupBy("hotel_id").count().filter("count >= 3");
-            Dataset<Row> filteredData = rawData.join(userCounts, "user_id").join(hotelCounts, "hotel_id");
-
-            long filteredCount = filteredData.count();
-            System.out.println(">>> 过滤后数据: " + filteredCount + " 条记录");
-
-            // StringIndexer转换
-            StringIndexerModel userModel = new StringIndexer()
-                    .setInputCol("user_id")
-                    .setOutputCol("user_index")
-                    .setHandleInvalid("skip")
-                    .fit(filteredData);
-
-            StringIndexerModel hotelModel = new StringIndexer()
-                    .setInputCol("hotel_id")
-                    .setOutputCol("hotel_index")
-                    .setHandleInvalid("skip")
-                    .fit(filteredData);
-
-            Dataset<Row> indexedData = hotelModel.transform(userModel.transform(filteredData))
-                    .persist(StorageLevel.MEMORY_AND_DISK_SER());
-
-            long indexedCount = indexedData.count();
-            System.out.println(">>> 索引转换完成，有效数据: " + indexedCount + " 条记录");
-
-            // 关键优化：降低ALS参数
-            ALS als = new ALS()
-                    .setUserCol("user_index")
-                    .setItemCol("hotel_index")
-                    .setRatingCol("action_weight")
-                    .setImplicitPrefs(true)
-                    .setRank(10)           // 降低rank
-                    .setMaxIter(15)       // 减少迭代次数
-                    .setRegParam(0.01)
-                    .setAlpha(40.0)
-                    .setCheckpointInterval(2)  // 更频繁的checkpoint
-                    .setSeed(42L);
-
-            // 训练模型
-            System.out.println(">>> 开始训练ALS模型...");
-            ALSModel model = als.fit(indexedData);
-            System.out.println(">>> ALS 模型训练完成");
-
-            // ========== 生成推荐 ==========
-            System.out.println(">>> 开始生成推荐...");
-
-            // 方案：展平推荐结果，避免深层嵌套
-            Dataset<Row> flattenedRecs = model.recommendForAllUsers(10)
-                    .select(
-                            col("user_index"),
-                            explode(col("recommendations")).as("recommendation")
-                    )
-                    .select(
-                            col("user_index"),
-                            col("recommendation.hotel_index").as("hotel_index"),
-                            col("recommendation.rating").as("score")
-                    )
-                    .repartition(4); // 重分区，避免数据倾斜
-
-            System.out.println(">>> 推荐生成完成，开始处理结果...");
-
-            // 准备ID映射
-            Map<Integer, String> userMap = new HashMap<>();
-            String[] userLabels = userModel.labels();
-            for (int i = 0; i < userLabels.length; i++) {
-                userMap.put(i, userLabels[i]);
-            }
-
-            Map<Integer, String> hotelMap = new HashMap<>();
-            String[] hotelLabels = hotelModel.labels();
-            for (int i = 0; i < hotelLabels.length; i++) {
-                hotelMap.put(i, hotelLabels[i]);
-            }
-
-            System.out.println(">>> ID映射准备完成，用户数: " + userMap.size() + ", 酒店数: " + hotelMap.size());
-
-            // 广播ID映射
-            Broadcast<Map<Integer, String>> userBroadcast = spark.sparkContext().broadcast(
-                    userMap, scala.reflect.ClassTag$.MODULE$.apply(Map.class));
-            Broadcast<Map<Integer, String>> hotelBroadcast = spark.sparkContext().broadcast(
-                    hotelMap, scala.reflect.ClassTag$.MODULE$.apply(Map.class));
-
-            // 广播Redis配置
-            Map<String, Object> redisConfig = new HashMap<>();
-            redisConfig.put("host", redisHost);
-            redisConfig.put("port", redisPort);
-            redisConfig.put("password", redisPassword);
-
-            Broadcast<Map<String, Object>> redisConfigBroadcast = spark.sparkContext().broadcast(
-                    redisConfig, scala.reflect.ClassTag$.MODULE$.apply(Map.class));
-
-            // 处理结果并写入Redis
-            flattenedRecs.foreachPartition(partition -> {
-                Map<Integer, String> localUserMap = userBroadcast.getValue();
-                Map<Integer, String> localHotelMap = hotelBroadcast.getValue();
-                Map<String, Object> localRedisConfig = redisConfigBroadcast.getValue();
-
-                String host = (String) localRedisConfig.get("host");
-                int port = (Integer) localRedisConfig.get("port");
-                String password = (String) localRedisConfig.get("password");
-
-                // 使用Map收集每个用户的推荐列表
-                Map<String, List<Map<String, Object>>> userRecsMap = new HashMap<>();
-
-                while (partition.hasNext()) {
-                    Row row = partition.next();
-                    int userIndex = row.getInt(0);
-                    int hotelIndex = row.getInt(1);
-                    float score = row.getFloat(2);
-
-                    String userId = localUserMap.get(userIndex);
-                    String hotelId = localHotelMap.get(hotelIndex);
-
-                    if (userId != null && hotelId != null && !hotelId.isEmpty()) {
-                        Map<String, Object> recItem = new HashMap<>();
-                        recItem.put("hotelId", hotelId);
-                        recItem.put("score", score);
-
-                        userRecsMap.computeIfAbsent(userId, k -> new ArrayList<>()).add(recItem);
-                    }
-                }
-
-                // 批量写入Redis
-                if (!userRecsMap.isEmpty()) {
-                    try (Jedis jedis = new Jedis(host, port)) {
-                        if (password != null && !password.isEmpty()) {
-                            jedis.auth(password);
-                        }
-
-                        Map<String, String> redisHashMap = new HashMap<>();
-                        for (Map.Entry<String, List<Map<String, Object>>> entry : userRecsMap.entrySet()) {
-                            // 按分数排序并取前10
-                            List<Map<String, Object>> top10 = entry.getValue().stream()
-                                    .sorted((a, b) -> {
-                                        float scoreA = ((Number) a.get("score")).floatValue();
-                                        float scoreB = ((Number) b.get("score")).floatValue();
-                                        return Float.compare(scoreB, scoreA);
-                                    })
-                                    .limit(10)
-                                    .collect(Collectors.toList());
-
-                            redisHashMap.put(entry.getKey(), JSON.toJSONString(top10));
-                        }
-
-                        // 使用Pipeline批量写入，提高性能
-                        Pipeline pipeline = jedis.pipelined();
-                        for (Map.Entry<String, String> entry : redisHashMap.entrySet()) {
-                            pipeline.hset(RedisConstants.HOTEL.RECOMMEND_HOTEL_HASH_KEY, entry.getKey(), entry.getValue());
-                        }
-                        pipeline.sync();
-
-                        System.out.println(">>> 批次写入Redis成功，共 " + redisHashMap.size() + " 条记录");
-                    } catch (Exception e) {
-                        System.err.println("Redis写入失败: " + e.getMessage());
-                        e.printStackTrace();
-                        throw new RuntimeException("Redis写入失败", e);
-                    }
-                }
-            });
-
-            System.out.println(">>> ALS 推荐模型训练成功并更新至 Redis");
-
-            // 清理缓存
-            indexedData.unpersist();
-
-        } finally {
-            if (spark != null) {
-                spark.stop();
-            }
+        // 设置checkpoint目录
+        String checkpointDir = "D:\\ideaProjects\\homi\\temp\\spark-checkpoint\\" + taskLog.getId();
+        File checkpointFile = new File(checkpointDir);
+        if (!checkpointFile.exists()) {
+            checkpointFile.mkdirs();
         }
+        spark.sparkContext().setCheckpointDir(checkpointDir);
+
+        // 读取数据
+        Properties properties = new Properties();
+        properties.setProperty("user", username);
+        properties.setProperty("password", password);
+        properties.setProperty("driver", "com.mysql.cj.jdbc.Driver");
+        properties.setProperty("fetchSize", "1000");
+
+        Dataset<Row> rawData = spark.read().jdbc(url,
+                "(SELECT user_id, hotel_id, action_weight FROM user_action_log WHERE action_weight > 0) as ratings",
+                properties);
+
+        long count = rawData.count();
+        taskLog.setProcessedRecords((int) count);
+        System.out.println(">>> 读取数据完成，共 " + count + " 条记录");
+
+        // 数据采样（如果数据量太大）
+        // rawData = rawData.sample(0.1);  // 采样10%的数据进行训练
+
+        // 过滤用户行为少于5次的用户
+        Dataset<Row> userCounts = rawData.groupBy("user_id").count().filter("count >= 5");
+        // 过滤用户行为少于3次的酒店
+        Dataset<Row> hotelCounts = rawData.groupBy("hotel_id").count().filter("count >= 3");
+        Dataset<Row> filteredData = rawData.join(userCounts, "user_id").join(hotelCounts, "hotel_id");
+
+        long filteredCount = filteredData.count();
+        System.out.println(">>> 过滤后数据: " + filteredCount + " 条记录");
+
+        // StringIndexer转换
+        StringIndexerModel userModel = new StringIndexer()
+                .setInputCol("user_id")
+                .setOutputCol("user_index")
+                .setHandleInvalid("skip")
+                .fit(filteredData);
+
+        StringIndexerModel hotelModel = new StringIndexer()
+                .setInputCol("hotel_id")
+                .setOutputCol("hotel_index")
+                .setHandleInvalid("skip")
+                .fit(filteredData);
+
+        Dataset<Row> indexedData = hotelModel.transform(userModel.transform(filteredData))
+                .persist(StorageLevel.MEMORY_AND_DISK_SER());
+
+        long indexedCount = indexedData.count();
+        System.out.println(">>> 索引转换完成，有效数据: " + indexedCount + " 条记录");
+
+        // 关键优化：降低ALS参数
+        ALS als = new ALS()
+                .setUserCol("user_index")
+                .setItemCol("hotel_index")
+                .setRatingCol("action_weight")
+                .setImplicitPrefs(true)
+                .setRank(10)           // 降低rank
+                .setMaxIter(15)       // 减少迭代次数
+                .setRegParam(0.01)
+                .setAlpha(40.0)
+                .setCheckpointInterval(2)  // 更频繁的checkpoint
+                .setSeed(42L);
+
+        // 训练模型
+        System.out.println(">>> 开始训练ALS模型...");
+        ALSModel model = als.fit(indexedData);
+        System.out.println(">>> ALS 模型训练完成");
+
+        // ========== 生成推荐 ==========
+        System.out.println(">>> 开始生成推荐...");
+
+        // 方案：展平推荐结果，避免深层嵌套
+        Dataset<Row> flattenedRecs = model.recommendForAllUsers(10)
+                .select(
+                        col("user_index"),
+                        explode(col("recommendations")).as("recommendation")
+                )
+                .select(
+                        col("user_index"),
+                        col("recommendation.hotel_index").as("hotel_index"),
+                        col("recommendation.rating").as("score")
+                )
+                .repartition(4); // 重分区，避免数据倾斜
+
+        System.out.println(">>> 推荐生成完成，开始处理结果...");
+
+        // 准备ID映射
+        Map<Integer, String> userMap = new HashMap<>();
+        String[] userLabels = userModel.labels();
+        for (int i = 0; i < userLabels.length; i++) {
+            userMap.put(i, userLabels[i]);
+        }
+
+        Map<Integer, String> hotelMap = new HashMap<>();
+        String[] hotelLabels = hotelModel.labels();
+        for (int i = 0; i < hotelLabels.length; i++) {
+            hotelMap.put(i, hotelLabels[i]);
+        }
+
+        System.out.println(">>> ID映射准备完成，用户数: " + userMap.size() + ", 酒店数: " + hotelMap.size());
+
+        // 广播ID映射
+        Broadcast<Map<Integer, String>> userBroadcast = spark.sparkContext().broadcast(
+                userMap, scala.reflect.ClassTag$.MODULE$.apply(Map.class));
+        Broadcast<Map<Integer, String>> hotelBroadcast = spark.sparkContext().broadcast(
+                hotelMap, scala.reflect.ClassTag$.MODULE$.apply(Map.class));
+
+        // 广播Redis配置
+        Map<String, Object> redisConfig = new HashMap<>();
+        redisConfig.put("host", redisHost);
+        redisConfig.put("port", redisPort);
+        redisConfig.put("password", redisPassword);
+
+        Broadcast<Map<String, Object>> redisConfigBroadcast = spark.sparkContext().broadcast(
+                redisConfig, scala.reflect.ClassTag$.MODULE$.apply(Map.class));
+
+        // 处理结果并写入Redis
+        flattenedRecs.foreachPartition(partition -> {
+            Map<Integer, String> localUserMap = userBroadcast.getValue();
+            Map<Integer, String> localHotelMap = hotelBroadcast.getValue();
+            Map<String, Object> localRedisConfig = redisConfigBroadcast.getValue();
+
+            String host = (String) localRedisConfig.get("host");
+            int port = (Integer) localRedisConfig.get("port");
+            String password = (String) localRedisConfig.get("password");
+
+            // 使用Map收集每个用户的推荐列表
+            Map<String, List<Map<String, Object>>> userRecsMap = new HashMap<>();
+
+            while (partition.hasNext()) {
+                Row row = partition.next();
+                int userIndex = row.getInt(0);
+                int hotelIndex = row.getInt(1);
+                float score = row.getFloat(2);
+
+                String userId = localUserMap.get(userIndex);
+                String hotelId = localHotelMap.get(hotelIndex);
+
+                if (userId != null && hotelId != null && !hotelId.isEmpty()) {
+                    Map<String, Object> recItem = new HashMap<>();
+                    recItem.put("hotelId", hotelId);
+                    recItem.put("score", score);
+
+                    userRecsMap.computeIfAbsent(userId, k -> new ArrayList<>()).add(recItem);
+                }
+            }
+
+            // 批量写入Redis
+            if (!userRecsMap.isEmpty()) {
+                try (Jedis jedis = new Jedis(host, port)) {
+                    if (password != null && !password.isEmpty()) {
+                        jedis.auth(password);
+                    }
+
+                    Map<String, String> redisHashMap = new HashMap<>();
+                    for (Map.Entry<String, List<Map<String, Object>>> entry : userRecsMap.entrySet()) {
+                        // 按分数排序并取前10
+                        List<Map<String, Object>> top10 = entry.getValue().stream()
+                                .sorted((a, b) -> {
+                                    float scoreA = ((Number) a.get("score")).floatValue();
+                                    float scoreB = ((Number) b.get("score")).floatValue();
+                                    return Float.compare(scoreB, scoreA);
+                                })
+                                .limit(10)
+                                .collect(Collectors.toList());
+
+                        redisHashMap.put(entry.getKey(), JSON.toJSONString(top10));
+                    }
+
+                    // 使用Pipeline批量写入，提高性能
+                    Pipeline pipeline = jedis.pipelined();
+                    for (Map.Entry<String, String> entry : redisHashMap.entrySet()) {
+                        pipeline.hset(RedisConstants.HOTEL.RECOMMEND_HOTEL_HASH_KEY, entry.getKey(), entry.getValue());
+                    }
+                    pipeline.sync();
+
+                    System.out.println(">>> 批次写入Redis成功，共 " + redisHashMap.size() + " 条记录");
+                } catch (Exception e) {
+                    System.err.println("Redis写入失败: " + e.getMessage());
+                    e.printStackTrace();
+                    throw new RuntimeException("Redis写入失败", e);
+                }
+            }
+        });
+
+        System.out.println(">>> ALS 推荐模型训练成功并更新至 Redis");
+
+        // 清理缓存
+        indexedData.unpersist();
+
     }
+
 
 }

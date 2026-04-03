@@ -10,6 +10,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.yy.homi.common.constant.RabbitMqConstants;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.domain.to.SysUserCache;
+import com.yy.homi.common.enums.hotel.AlbumCategoryEnum;
+import com.yy.homi.common.enums.hotel.AlbumSourceEnum;
 import com.yy.homi.hotel.domain.convert.UserActionLogConverter;
 import com.yy.homi.hotel.domain.dto.request.UserActionLogInsertReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelAlbum;
@@ -18,6 +21,7 @@ import com.yy.homi.hotel.domain.entity.HotelStats;
 import com.yy.homi.hotel.domain.entity.UserActionLog;
 import com.yy.homi.hotel.domain.vo.HotelVO;
 import com.yy.homi.hotel.feign.SysCityFeign;
+import com.yy.homi.hotel.feign.SysUserFeign;
 import com.yy.homi.hotel.mapper.HotelAlbumMapper;
 import com.yy.homi.hotel.mapper.HotelBaseMapper;
 import com.yy.homi.hotel.mapper.HotelStatsMapper;
@@ -50,6 +54,8 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
     private UserActionLogConverter userActionLogConverter;
 
     @Autowired
+    private SysUserFeign sysUserFeign;
+    @Autowired
     private SysCityFeign sysCityFeign;
     @Autowired
     private RabbitTemplate rabbitTemplate;
@@ -68,7 +74,7 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
         UserActionLog userActionLog = userActionLogConverter.insertReqDtoToEntity(reqDTO);
         userActionLog.setActionWeight(UserActionLog.getWeightByType(userActionLog.getActionType()));
         userActionLogMapper.insert(userActionLog);
-        rabbitTemplate.convertAndSend(RabbitMqConstants.USER_ACTION_LOG_EXCHANGE,RabbitMqConstants.USER_ACTION_LOG_ROUTING_KEY,userActionLog);
+        rabbitTemplate.convertAndSend(RabbitMqConstants.USER_ACTION_LOG_EXCHANGE, RabbitMqConstants.USER_ACTION_LOG_ROUTING_KEY, userActionLog);
 
         return R.ok("插入成功！");
     }
@@ -289,7 +295,7 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
     }
 
     @Override
-    public R countViewCommentScoreRange(String userId){
+    public R countViewCommentScoreRange(String userId) {
         List<Map<String, Object>> rawData = userActionLogMapper.countViewCommentScoreRange(userId);
         // 定义标准顺序，确保饼图图例顺序固定
         List<String> standardOrder = Arrays.asList("0.0-3.0", "3.0-3.5", "3.5-4.0", "4.0-4.5", "4.5-4.8", "4.8-5.0");
@@ -313,7 +319,7 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
     public R countViewCommentCountRange(String userId) {
         List<Map<String, Object>> rawData = userActionLogMapper.countViewCommentCountRange(userId);
         // 定义标准顺序，确保饼图图例顺序固定
-        List<String> standardOrder = Arrays.asList("0-500", "500-1000", "1000-2000", "2000-3000", "3000-4000", "4000-5000","5000-7000","7000-10000",">=10000");
+        List<String> standardOrder = Arrays.asList("0-500", "500-1000", "1000-2000", "2000-3000", "3000-4000", "4000-5000", "5000-7000", "7000-10000", ">=10000");
 
         // 转为 Map 方便索引
         Map<String, Object> dataMap = rawData.stream()
@@ -353,19 +359,19 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
         // 4. 封装返回结果，对应雷达图的五个角
         JSONObject result = new JSONObject();
         result.put("indicator", Arrays.asList("卫生", "环境", "设施", "服务", "星级"));
-        result.put("data", Arrays.asList(hygiene, environment, facility, service, (double)star));
+        result.put("data", Arrays.asList(hygiene, environment, facility, service, (double) star));
 
         return R.ok(result);
     }
 
     @Override
     public R countOpeningYearPreference(String userId) {
-        List<Map<String,Object>> openYearMaps= userActionLogMapper.countOpenYear(userId);
-        Map<Integer,Integer> result = new HashMap<>();
+        List<Map<String, Object>> openYearMaps = userActionLogMapper.countOpenYear(userId);
+        Map<Integer, Integer> result = new HashMap<>();
         for (Map<String, Object> openYearMap : openYearMaps) {
             Integer openYear = Integer.valueOf(openYearMap.get("open_year").toString());
             Integer count = Integer.valueOf(openYearMap.get("count").toString());
-            result.put(openYear,count);
+            result.put(openYear, count);
         }
         return R.ok(result);
     }
@@ -482,6 +488,67 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
         return R.ok(result);
     }
 
+    @Override
+    public R getLatestOne() {
+        UserActionLog userActionLog = userActionLogMapper.selectOne(
+                new LambdaQueryWrapper<UserActionLog>()
+                        .ne(UserActionLog::getActionType, UserActionLog.SEARCH_ACTION)
+                        .orderByDesc(UserActionLog::getCreateTime)
+                        .last("limit 1")
+        );
+
+        if (userActionLog == null) {
+            return R.fail("暂无记录！");
+        }
+        String hotelId = userActionLog.getHotelId();
+        if (StrUtil.isBlank(hotelId)) {
+            log.error("日志酒店id为空！");
+            return R.fail("系统异常！");
+        }
+        HotelBase hotelBase = hotelBaseMapper.selectById(hotelId);
+        if (hotelBase == null) {
+            log.error("日志hotelId对应酒店不存在！");
+            return R.fail("系统异常！");
+        }
+
+        String userId = userActionLog.getUserId();
+        if (StrUtil.isBlank(userId)) {
+            log.error("日志用户id为空！");
+            return R.fail("系统异常！");
+        }
+
+        R r = sysUserFeign.getUserInfo(userId);
+        if (r.getCode() != HttpStatus.OK.value()) {
+            return R.fail("远程调用rbac模块查询用户详情失败！");
+        }
+
+        if (r.getData() == null) {
+            log.error("日志userId对应用户不存在！");
+            return R.fail("系统异常！");
+        }
+        SysUserCache sysUserCache = JSON.parseObject(JSON.toJSONString(r.getData()), SysUserCache.class);
+
+        HotelAlbum hotelAlbum = hotelAlbumMapper.selectOne(new LambdaQueryWrapper<HotelAlbum>()
+                .eq(HotelAlbum::getHotelId, hotelId)
+                .eq(HotelAlbum::getSource, AlbumSourceEnum.HOTEL.getCode())
+                .eq(HotelAlbum::getCategory, AlbumCategoryEnum.FEATURED.getCode())
+                .orderByAsc(HotelAlbum::getSeq)
+                .last("limit 1")
+        );
+
+        JSONObject result = new JSONObject();
+        result.put("userId", userId);
+        result.put("nickName", sysUserCache.getNickName());
+        result.put("hotelId", hotelId);
+        result.put("hotelName", hotelBase.getName());
+        if (hotelAlbum != null) result.put("imageUrl", hotelAlbum.getImageUrl());
+        result.put("actionType", userActionLog.getActionType());
+        result.put("createTime", userActionLog.getCreateTime());
+
+        return R.ok(result);
+
+    }
+
     private Map<String, Object> createSeriesMap(String name, int[] data) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", name);
@@ -500,7 +567,7 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
         String[] labels = {"4.0-4.5", "4.5-4.8", "4.8-5.0"};
 
         for (int i = 0; i < ranges.length; i++) {
-            List<Double> prices = userActionLogMapper.getPricesByScoreRange(ranges[i][0], ranges[i][1],userId);
+            List<Double> prices = userActionLogMapper.getPricesByScoreRange(ranges[i][0], ranges[i][1], userId);
 
             JSONObject box = new JSONObject();
             box.put("name", labels[i]);
@@ -533,7 +600,7 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
     @Override
     public R getTotalTrend(String userId, Long beginTime, Long endTime) {
 
-        if(beginTime == null || endTime == null){
+        if (beginTime == null || endTime == null) {
             return R.fail("参数错误！");
         }
 
@@ -597,22 +664,22 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
         HashMap<String, Integer> countActionTypeMap = new HashMap<>();
 
         for (Map<String, Object> countActionTypeMapDb : countActionTypeMaps) {
-            String actionType =  countActionTypeMapDb.get("action_type").toString();
+            String actionType = countActionTypeMapDb.get("action_type").toString();
             Integer count = Integer.valueOf(countActionTypeMapDb.get("count").toString());
-            if(actionType.equals(UserActionLog.VIEW_ACTION)){
+            if (actionType.equals(UserActionLog.VIEW_ACTION)) {
                 countActionTypeMap.put("浏览详情", count);
             } else if (actionType.equals(UserActionLog.SEARCH_ACTION)) {
                 countActionTypeMap.put("搜索行为", count);
-            }else if (actionType.equals(UserActionLog.FAVORITE_ACTION)) {
+            } else if (actionType.equals(UserActionLog.FAVORITE_ACTION)) {
                 countActionTypeMap.put("收藏酒店", count);
-            }else if (actionType.equals(UserActionLog.CLICK_TRIP_ACTION)) {
+            } else if (actionType.equals(UserActionLog.CLICK_TRIP_ACTION)) {
                 countActionTypeMap.put("预定酒店", count);
-            }else {
+            } else {
                 Integer other = countActionTypeMap.get("其他");
-                if(other == null){
+                if (other == null) {
                     countActionTypeMap.put("其他", count);
-                }else{
-                    countActionTypeMap.put("其他", other+count);
+                } else {
+                    countActionTypeMap.put("其他", other + count);
                 }
             }
         }
@@ -621,7 +688,8 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
 
     /**
      * 格式化数值
-     * @param obj 原始数据
+     *
+     * @param obj   原始数据
      * @param scale 保留小数位数 (0 表示取整)
      */
     private double formatScore(Object obj, int scale) {

@@ -43,4 +43,7 @@ public interface UserActionLogService extends IService<UserActionLog>{
     R getHotelFacilityCloud(String userId);
 
     R getRoomAreaStats(String userId);
+
+    R getLatestOne();
+
 }

@@ -27,6 +27,12 @@ public class UserActionLogController {
         return userActionLogService.insertLog(reqDTO);
     }
 
+    //获取最新一条日志（不是搜索）的操作
+    @GetMapping("/getLatestOne")
+    public R getLatestOne(){
+        return userActionLogService.getLatestOne();
+    }
+
     @GetMapping("/getViewHistory")
     public R getViewHistory(@Validated @RequestParam("userId") @NotBlank(message = "userId不能为空！") String userId,
                             @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum,
