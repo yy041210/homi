@@ -168,7 +168,7 @@ public class SysCityServiceImpl extends ServiceImpl<SysCityMapper, SysCity> impl
     @Override
     public R getNamesByIds(List<Integer> cityIds) {
         if(CollectionUtil.isEmpty(cityIds)){
-            return R.fail("省编码集合不能为空！");
+            return R.fail("市编码集合不能为空！");
         }
         List<SysCity> sysCities = cityMapper.selectList(new LambdaQueryWrapper<SysCity>().in(SysCity::getId, cityIds));
         if(CollectionUtil.isEmpty(sysCities)){

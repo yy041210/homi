@@ -9,4 +9,5 @@ public interface UserActionLogConverter {
 
     UserActionLog insertReqDtoToEntity(UserActionLogInsertReqDTO userActionLogInsertReqDTO);
 
+    Object countOpeningYearByUserId(String userId);
 }

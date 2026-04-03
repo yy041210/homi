@@ -23,4 +23,11 @@ public class TaskTestController {
         new Thread(() -> scheduledTask.processUserProfile()).start(); // 异步触发，防止前端超时
         return "任务已在后台启动，请查看侧边栏日志";
     }
+
+    @GetMapping("/runCalculateHotelHeat")
+    public String runCalculateHotelHeat() {
+        new Thread(() -> scheduledTask.calculateHotelHeat()).start(); // 异步触发，防止前端超时
+        return "任务已在后台启动，请查看侧边栏日志";
+    }
+
 }

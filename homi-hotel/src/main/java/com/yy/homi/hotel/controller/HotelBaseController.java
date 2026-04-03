@@ -102,7 +102,9 @@ public class HotelBaseController {
         return hotelBaseService.getRecommendHotelList(userId);
     }
 
-
-
+    @GetMapping("/countHotelByCity")
+    public R countHotelByCity(){
+        return hotelBaseService.countHotelByCity();
+    }
 
 }

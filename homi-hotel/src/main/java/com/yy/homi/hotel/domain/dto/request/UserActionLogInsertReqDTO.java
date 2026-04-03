@@ -55,9 +55,10 @@ public class UserActionLogInsertReqDTO implements Serializable {
     private Float serviceScore;
     @Schema(description = "酒店综合评分", example = "4.8")
     private Float commentScore;
+    @Schema(description = "酒店评价数", example = "4.8")
+    private Integer commentCount;
     @Schema(description = "浏览时房型的可住人数或者搜索时", example = "2")
     private Integer maxOccupancy;
-
     @Schema(description = "浏览时房型大小", example = "2")
     private Integer minArea;
     @Schema(description = "浏览时房型大小", example = "2")

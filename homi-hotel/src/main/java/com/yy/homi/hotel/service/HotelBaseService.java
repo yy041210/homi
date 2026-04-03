@@ -37,4 +37,6 @@ public interface HotelBaseService extends IService<HotelBase> {
     R syncHotelDocFromDB();
 
     R getRecommendHotelList(String userId);
+
+    R countHotelByCity();
 }

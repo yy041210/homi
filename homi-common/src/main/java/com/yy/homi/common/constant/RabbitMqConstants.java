@@ -7,4 +7,9 @@ public class RabbitMqConstants {
     public static final String HOMI_LOG_QUEUE = "homi.log.queue";
     // 路由键
     public static final String HOMI_LOG_ROUTING_KEY = "homi.log.routing.key";
+
+    //用户日志实时计算
+    public static final String USER_ACTION_LOG_EXCHANGE = "user.action.log.exchange";
+    public static final String USER_ACTION_LOG_QUEUE = "user.action.log.queue";
+    public static final String USER_ACTION_LOG_ROUTING_KEY = "user.action.log.routing.key";
 }

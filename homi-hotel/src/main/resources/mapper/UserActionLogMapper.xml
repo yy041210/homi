@@ -20,6 +20,7 @@
         <result column="device_score" property="deviceScore" />
         <result column="environment_score" property="environmentScore" />
         <result column="service_score" property="serviceScore" />
+        <result column="comment_count" property="commentCount" />
         <result column="city_name" property="cityName" />
         <result column="comment_score" property="commentScore" />
         <result column="max_occupancy" property="maxOccupancy" />
@@ -51,6 +52,198 @@
         hotel_id
     </select>
 
+    <select id="countViewByHour" resultType="map">
+        SELECT
+        HOUR(create_time) as hour,
+        COUNT(*) as count
+        FROM
+        user_action_log
+        WHERE
+        action_type = 'VIEW_DETAIL'
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        GROUP BY
+        hour
+    </select>
+
+    <select id="countPriceRangePreference" resultType="map">
+        SELECT CASE
+                   WHEN show_price &lt; 100 THEN '&lt;¥100'
+                   WHEN show_price >= 100 AND show_price &lt; 200 THEN '¥100-200'
+                   WHEN show_price >= 200 AND show_price &lt; 350 THEN '¥200-350'
+                   WHEN show_price >= 350 AND show_price &lt; 500 THEN '¥350-500'
+                   WHEN show_price >= 500 AND show_price &lt; 800 THEN '¥500-800'
+                   ELSE '>¥800'
+                   END AS name,
+               COUNT(*) AS value
+        FROM
+            user_action_log
+        WHERE
+            action_type = 'VIEW_DETAIL'
+          AND user_id = #{userId}
+          AND show_price IS NOT NULL
+        GROUP BY
+            name
+    </select>
+
+    <select id="countViewCommentCountRange" resultType="java.util.Map">
+        SELECT
+        CASE
+        WHEN comment_count &lt; 500 THEN '0-500'
+        WHEN comment_count &gt;= 500 AND comment_count &lt; 1000 THEN '500-1000'
+        WHEN comment_count &gt;= 1000 AND comment_count &lt; 2000 THEN '1000-2000'
+        WHEN comment_count &gt;= 2000 AND comment_count &lt; 3000 THEN '2000-3000'
+        WHEN comment_count &gt;= 3000 AND comment_count &lt; 4000 THEN '3000-4000'
+        WHEN comment_count &gt;= 4000 AND comment_count &lt; 5000 THEN '4000-5000'
+        WHEN comment_count &gt;= 5000 AND comment_count &lt; 7000 THEN '5000-7000'
+        WHEN comment_count &gt;= 7000 AND comment_count &lt; 10000 THEN '7000-10000'
+        WHEN comment_count &gt;= 10000 THEN '&gt;=10000'
+        END AS name,
+        COUNT(*) AS value
+        FROM
+        user_action_log
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            AND action_type = 'VIEW_DETAIL'
+            AND comment_count IS NOT NULL
+        </where>
+        GROUP BY
+        name
+    </select>
+
+    <select id="countViewCommentScoreRange" resultType="java.util.Map">
+        SELECT
+            CASE
+                WHEN comment_score &gt;= 0.0  AND comment_score &lt; 3.0 THEN '0.0-3.0'
+                WHEN comment_score &gt;= 3.0  AND comment_score &lt; 3.5 THEN '3.0-3.5'
+                WHEN comment_score &gt;= 3.5  AND comment_score &lt; 4.0 THEN '3.5-4.0'
+                WHEN comment_score &gt;= 4.0  AND comment_score &lt; 4.5 THEN '4.0-4.5'
+                WHEN comment_score &gt;= 4.5  AND comment_score &lt; 4.8 THEN '4.5-4.8'
+                WHEN comment_score &gt;= 4.8  AND comment_score &lt; 5.0 THEN '4.8-5.0'
+                END AS name,
+            COUNT(*) AS value
+        FROM
+            user_action_log
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            AND action_type = 'VIEW_DETAIL'
+            AND comment_score IS NOT NULL
+        </where>
+        GROUP BY
+            name
+    </select>
+
+
+
+
+    <select id="countTrendByDate" resultType="map">
+        SELECT
+        DATE_FORMAT(create_time, '%Y-%m-%d') as dateStr,
+        COUNT(CASE WHEN action_type = 'VIEW_DETAIL' THEN 1 END) as viewCount,
+        COUNT(CASE WHEN action_type = 'FAVORITE' THEN 1 END) as favoriteCount,
+        COUNT(CASE WHEN action_type = 'SEARCH' THEN 1 END) as searchCount,
+        -- 假设 CLICK_TRIP 代表预订跳转
+        COUNT(CASE WHEN action_type = 'CLICK_TRIP' THEN 1 END) as bookingCount
+        FROM user_action_log
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            AND create_time BETWEEN #{beginTime} AND #{endTime}
+        </where>
+        GROUP BY dateStr
+        ORDER BY dateStr ASC
+    </select>
+
+    <select id="countActionTypeByUserId" resultType="java.util.Map">
+        select action_type,count(*) as count  from user_action_log
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+        </where>
+        group by action_type
+    </select>
+
+    <select id="getPricesByScoreRange" resultType="java.lang.Double">
+        SELECT show_price FROM user_action_log
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            AND action_type = 'VIEW_DETAIL'
+            AND comment_score IS NOT NULL
+            AND comment_score &gt;= #{minScore}
+            AND comment_score &lt; #{maxScore}
+            AND show_price IS NOT NULL
+        </where>
+
+    </select>
+
+    <select id="getUserRadarStats" resultType="java.util.Map">
+        SELECT AVG(hygiene_score)     as hygiene,
+               AVG(environment_score) as environment,
+               AVG(device_score)    as facility,
+               AVG(service_score)     as service,
+               AVG(star)        as star
+        FROM user_action_log uas
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            AND action_type = 'VIEW_DETAIL'
+        </where>
+    </select>
+
+    <select id="countOpenYear" resultType="java.util.Map">
+        SELECT hs.open_year,count(*) as count FROM
+            user_action_log  as ual
+            left join hotel_base as hs
+            ON ual.hotel_id COLLATE utf8mb4_unicode_ci = hs.id COLLATE utf8mb4_unicode_ci
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            AND ual.action_type = 'VIEW_DETAIL'
+            AND hs.open_year IS NOT NULL
+        </where>
+        group by hs.open_year
+        ORDER BY hs.open_year ASC
+    </select>
+
+    <select id="selectRoomCountByUserId" resultType="map">
+        SELECT
+            h.room_count,
+            COUNT(*) as frequency
+        FROM user_action_log ual
+                 INNER JOIN hotel_base h ON ual.hotel_id COLLATE utf8mb4_unicode_ci = h.id COLLATE utf8mb4_unicode_ci
+        <where>
+            <if test="userId != null">AND ual.user_id = #{userId}</if>
+            AND ual.action_type = 'VIEW_DETAIL'
+            AND h.room_count IS NOT NULL
+        </where>
+        GROUP BY h.room_count
+    </select>
+
+    <select id="selectFacilityNamesByUserId" resultType="string">
+        SELECT
+            hf.name
+        FROM user_action_log AS ual
+                 INNER JOIN hotel_facility AS hf
+                            ON ual.hotel_id COLLATE utf8mb4_unicode_ci = hf.hotel_id COLLATE utf8mb4_unicode_ci
+        <where>
+            <if test="userId != null">AND ual.user_id = #{userId}</if>
+            AND ual.action_type = 'VIEW_DETAIL'
+            AND hf.name IS NOT NULL
+        </where>
+    </select>
+
+    <select id="selectAreaAndActionList" resultType="com.yy.homi.hotel.domain.entity.UserActionLog">
+
+        SELECT
+        min_area,
+        max_area,
+        action_type
+        FROM user_action_log
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            AND action_type IN ('VIEW_DETAIL', 'CLICK_TRIP')
+            AND min_area IS NOT NULL
+            AND max_area IS NOT NULL
+        </where>
+
+    </select>
 
 
 </mapper>

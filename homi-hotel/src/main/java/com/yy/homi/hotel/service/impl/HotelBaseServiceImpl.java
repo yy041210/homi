@@ -1110,6 +1110,53 @@ public class HotelBaseServiceImpl extends ServiceImpl<HotelBaseMapper, HotelBase
         return R.ok(result);
     }
 
+    @Override
+    public R countHotelByCity() {
+        List<Map<String, Long>> cityIdCountMaps = hotelBaseMapper.countHotelByCity();
+        Map<String, Integer> cityIdCountMap = new HashMap<>();
+        List<Integer> cityIds = new ArrayList<>();
+
+        for (Map<String, Long> map : cityIdCountMaps) {
+            // 假设map中有"cityId"和"count"两个key
+            String cityId = String.valueOf(map.get("city_id"));
+            Integer count = Math.toIntExact((map.get("count")));
+            cityIdCountMap.put(cityId, count);
+            cityIds.add(Integer.parseInt(cityId));
+        }
+
+        //查询市名
+        R r = sysCityFeign.getNamesByIds(cityIds);
+        if(r.getCode() != HttpStatus.OK.value()){
+            return R.fail("远程调用根据cityIds查询市名失败！");
+        }
+        Map<String, String> cityIdNameMap = (Map<String, String>) r.getData();
+
+        List<JSONObject> result = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : cityIdCountMap.entrySet()) {
+            String cityId = entry.getKey();
+            Integer count = entry.getValue();
+            if (StrUtil.isEmpty(cityId) || count == null ||  count == 0 ){
+                continue;
+            }
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("cityId",cityId);
+            String cityName = cityIdNameMap.get(cityId);
+            if(StrUtil.isEmpty(cityName)){
+                continue;
+            }
+            jsonObject.put("cityName",cityName);
+            jsonObject.put("imageUrl","https://12313.jpg");
+            jsonObject.put("count",count);
+            result.add(jsonObject);
+        }
+
+        result = result.stream()
+                .sorted(Comparator.comparingInt((JSONObject obj) -> obj.getInteger("count")).reversed())
+                .collect(Collectors.toList());
+
+        return R.ok(result);
+    }
+
 
     /**
      * 提取 Bucket 中的 Key 值并转为 List

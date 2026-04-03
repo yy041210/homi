@@ -12,6 +12,7 @@ import org.apache.spark.ml.feature.StringIndexerModel;
 import org.apache.spark.ml.recommendation.ALS;
 import org.apache.spark.ml.recommendation.ALSModel;
 import org.apache.spark.sql.*;
+import org.apache.spark.sql.expressions.Window;
 import org.apache.spark.storage.StorageLevel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +24,7 @@ import redis.clients.jedis.Pipeline;
 
 
 import java.io.File;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,100 @@ public class ScheduledTask {
     @Autowired
     private SparkTaskMapper sparkTaskMapper;
 
+    @Scheduled(cron = "0 0 3 ? * MON")
+    public void calculateHotelHeat() {
+        //初始化任务日志
+        SparkTask taskLog = new SparkTask();
+        taskLog.setTaskName("定时任务计算Top10城市的热度最高的10家酒店 : " + LocalDateTime.now());
+        taskLog.setTaskType(SparkTask.USER_PROFILING_TASK); // 建议增加专门的常量
+        taskLog.setStartTime(new Date());
+        taskLog.setStatus(SparkTask.TASK_RUNNING);
+        sparkTaskMapper.insert(taskLog);
+
+        SparkSession spark = null;
+        try {
+            // 1. 初始化 Spark
+            SparkConf conf = new SparkConf()
+                    .setAppName("Top10CityRecommendHotel-" + System.currentTimeMillis())
+                    .setMaster("local[1]")
+                    .set("spark.sql.adaptive.enabled", "true")
+                    .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+                    .set("spark.executor.extraJavaOptions", "-Xss50m -XX:+UseG1GC")
+                    .set("spark.driver.extraJavaOptions", "-Xss50m")
+                    .set("spark.sql.shuffle.partitions", "4");
+
+            spark = SparkSession.builder().config(conf).getOrCreate();
+            Properties props = new Properties();
+            props.setProperty("user", username);
+            props.setProperty("password", password);
+            props.setProperty("driver", "com.mysql.cj.jdbc.Driver");
+
+            // 2. 读取原始行为数据（近30天）
+            String rawLogSql = "(SELECT hotel_id, city_id, action_weight FROM user_action_log " +
+                    "WHERE create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as raw_logs";
+            Dataset<Row> rawLogs = spark.read().jdbc(url, rawLogSql, props);
+            taskLog.setProcessedRecords((int) rawLogs.count());
+
+            // 3. 计算“最热门的10个城市”
+            //按 city_id 分组，求 action_weight 总和，排名前 10
+            List<String> top10CityIds = rawLogs.groupBy("city_id")
+                    .agg(sum("action_weight").as("city_total_weight"))
+                    .orderBy(col("city_total_weight").desc())
+                    .limit(10)
+                    .select("city_id")
+                    .collectAsList()
+                    .stream()
+                    .map(row -> String.valueOf(row.get(0)))
+                    .collect(Collectors.toList());
+
+            if (top10CityIds.isEmpty()) return;
+
+            // 4. 仅计算这 10 个城市内部的酒店排名
+            // 过滤出 top10CityIds 的数据 -> 按酒店分组 -> 窗口函数取前 10
+            Dataset<Row> topHotelsDf = rawLogs
+                    .filter(col("city_id").isin(top10CityIds.toArray())) //只取前十城市
+                    .groupBy("city_id", "hotel_id")
+                    .agg(sum("action_weight").as("heat_score"))
+                    .withColumn("rn", row_number().over(
+                            Window.partitionBy("city_id").orderBy(col("heat_score").desc())
+                    ))
+                    .filter("rn <= 10");
+
+            // 5. 聚合为 List 并写入 Redis
+            List<Row> resultList = topHotelsDf.groupBy("city_id")
+                    .agg(collect_list("hotel_id").as("hotelIds"))
+                    .collectAsList();
+
+            Map<String,List<String>> redisResult = new HashMap<>();
+            for (Row row : resultList) {
+                String cityId = String.valueOf(row.get(0));
+                List<String> hotelIds = row.getList(1);
+                redisResult.put(cityId,hotelIds);
+            }
+
+            //存入redis
+            redisTemplate.opsForValue().set("homi:hotel:city:recommend",JSON.toJSONString(redisResult));
+            System.out.println(">>> 热门城市榜单更新完成，处理城市数：" + resultList.size());
+
+        } catch (Throwable t) {
+            t.printStackTrace();
+            taskLog.setStatus(SparkTask.TASK_ERROR);
+            String errorMsg = t.getClass().getSimpleName() + ": " + t.getMessage();
+            taskLog.setErrorMsg(errorMsg.length() > 500 ? errorMsg.substring(0, 500) : errorMsg);
+        } finally {
+            if (spark != null) {
+                spark.stop();
+            }
+            taskLog.setEndTime(new Date());
+            if (taskLog.getStartTime() != null) {
+                long seconds = (taskLog.getEndTime().getTime() - taskLog.getStartTime().getTime()) / 1000;
+                taskLog.setDuration(seconds);
+            }
+            sparkTaskMapper.updateById(taskLog);
+        }
+
+    }
+
     /**
      * 定时每天凌晨两点计算用户画像
      */
@@ -59,7 +154,7 @@ public class ScheduledTask {
     public void processUserProfile() {
         // 1. 初始化任务日志
         SparkTask taskLog = new SparkTask();
-        taskLog.setTaskName("定时任务计算用户画像 : " + LocalDate.now());
+        taskLog.setTaskName("定时任务计算用户画像 : " + LocalDateTime.now());
         taskLog.setTaskType(SparkTask.USER_PROFILING_TASK); // 建议增加专门的常量
         taskLog.setStartTime(new Date());
         taskLog.setStatus(SparkTask.TASK_RUNNING);
@@ -184,8 +279,7 @@ public class ScheduledTask {
     public void trainRecommendAlsTask() {
         // 1. 初始化日志
         SparkTask taskLog = new SparkTask();
-        Date now = new Date();
-        taskLog.setTaskName("定时任务ALS酒店推荐模型训练 : " + now.getYear() + "-" + now.getMonth() + "-" + now.getDay());
+        taskLog.setTaskName("定时任务ALS酒店推荐模型训练 : " + LocalDateTime.now());
         taskLog.setTaskType(SparkTask.MODEL_TRAINING_TASK);
         taskLog.setStartTime(new Date());
         taskLog.setStatus(SparkTask.TASK_RUNNING);
@@ -208,8 +302,6 @@ public class ScheduledTask {
             sparkTaskMapper.updateById(taskLog);
         }
     }
-
-
 
 
     private void doRecommendAlsTrain(SparkTask taskLog) throws Exception {

@@ -10,6 +10,13 @@
     <packaging>pom</packaging>
     <description>Homi 项目的父工程</description>
 
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+    </repositories>
+
     <modules>
         <module>../homi-common</module>
         <module>../homi-flie</module>
@@ -48,6 +55,7 @@
         <easyexcel.version>3.3.3</easyexcel.version>
         <elasticsearch.version>7.4.2</elasticsearch.version>
         <spark-version>3.3.0</spark-version>
+        <bahir-version>2.12</bahir-version>
         <janino-version>3.0.16</janino-version>
         <jedis-version>3.8.0</jedis-version>
     </properties>

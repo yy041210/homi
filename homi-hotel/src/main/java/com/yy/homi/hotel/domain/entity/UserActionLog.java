@@ -46,6 +46,7 @@ public class UserActionLog implements Serializable {
     private Float environmentScore;  //环境得分
     private Float serviceScore;  //服务得分
     private Float commentScore;    // 酒店综合评分
+    private Integer commentCount; //评论数
     private Integer maxOccupancy;  //最大可住人数
     private Integer minArea;   //最小面积
     private Integer maxArea;   //最大面积

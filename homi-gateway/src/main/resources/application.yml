@@ -64,6 +64,12 @@ spring:
             - Path= /api/homi-hotel/**
           filters:
             - StripPrefix=1
+        - id: homi-hotel-ws
+          uri: ws://homi-hotel
+          predicates:
+            - Path= /api/homi-hotel/**
+          filters:
+            - StripPrefix=1
 
 # 日志配置
 logging:
@@ -74,6 +80,7 @@ logging:
 homi:
   auth:
     ignore-urls:
+      - /**/ws/**            #ws协议原生不支持请求头
       - /**/images/**
       - /**/static/**
       - /**/qrcode/**     #二维码相关接口
