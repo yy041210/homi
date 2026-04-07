@@ -7,7 +7,9 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.constant.CommonConstants;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.hotel.domain.convert.HotelFacilityConverter;
 import com.yy.homi.hotel.domain.dto.request.HotelFacilityPageListReqDTO;
+import com.yy.homi.hotel.domain.dto.request.HotelFacilityUpdateReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelFacility;
 import com.yy.homi.hotel.mapper.HotelFacilityMapper;
 import com.yy.homi.hotel.service.HotelFacilityService;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +31,9 @@ public class HotelFacilityServiceImpl extends ServiceImpl<HotelFacilityMapper, H
 
     @Autowired
     private HotelFacilityMapper hotelFacilityMapper;
+
+    @Autowired
+    private HotelFacilityConverter hotelFacilityConverter;
 
 
     @Override
@@ -136,5 +142,26 @@ public class HotelFacilityServiceImpl extends ServiceImpl<HotelFacilityMapper, H
     public R getHotelFacilityFilters() {
         List<Map<String, Integer>> result = hotelFacilityMapper.getTopFacilityFilters();
         return R.ok(result);
+    }
+
+    @Override
+    public R updateFacilityById(HotelFacilityUpdateReqDTO reqDTO) {
+        String id = reqDTO.getId();
+        if(StrUtil.isBlank(id)){
+            return R.fail("设备id不能为空！");
+        }
+        String tags = reqDTO.getTags();
+        if(StrUtil.isNotBlank(tags)){
+            if(tags.contains(",")) {
+                String[] parts = tags.split(",");
+                // 检查分割后是否至少有2个元素，且每个元素都不为空
+                if(parts.length < 2 || Arrays.stream(parts).allMatch(StrUtil::isNotBlank)) {
+                    return R.fail("tags格式错误！");
+                }
+            }
+        }
+        HotelFacility hotelFacility = hotelFacilityConverter.updateReqDtoToEntity(reqDTO);
+        hotelFacilityMapper.updateById(hotelFacility);
+        return R.ok("修改成功！");
     }
 }

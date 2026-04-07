@@ -3,9 +3,11 @@ package com.yy.homi.hotel.controller;
 import cn.hutool.core.util.StrUtil;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.HotelFacilityPageListReqDTO;
+import com.yy.homi.hotel.domain.dto.request.HotelFacilityUpdateReqDTO;
 import com.yy.homi.hotel.service.HotelFacilityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -44,6 +46,12 @@ public class HotelFacilityController {
     @GetMapping("/getHotelFacilityFilters")
     public R getHotelFacilityFilters() {
         return hotelFacilityService.getHotelFacilityFilters();
+    }
+
+    @Operation(summary = "根据id修改酒店设施")
+    @PostMapping("/updateById")
+    public R updateById(@Validated @RequestBody HotelFacilityUpdateReqDTO reqDTO){
+        return hotelFacilityService.updateFacilityById(reqDTO);
     }
 
 

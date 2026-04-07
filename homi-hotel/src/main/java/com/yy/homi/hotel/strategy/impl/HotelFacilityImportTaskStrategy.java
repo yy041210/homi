@@ -69,11 +69,6 @@ public class HotelFacilityImportTaskStrategy implements HotelImportTaskStrategy 
         try {
             hotelImportTaskMapper.updateToRunning(taskId, HotelImportTask.STATUS_RUNNING);  //改为运行中状态
 
-            //加载所有设备类型
-            Map<String, String> typeNameIdMap = hotelFacilityTypeMapper.selectList(null).stream().collect(Collectors.toMap(
-                    HotelFacilityType::getName,
-                    HotelFacilityType::getId
-            ));
 
             // 使用 AtomicInteger 记录总处理数
             AtomicInteger totalProcessed = new AtomicInteger(0);
@@ -124,7 +119,14 @@ public class HotelFacilityImportTaskStrategy implements HotelImportTaskStrategy 
 
                             log.info("处理批次数据，当前批次大小：{}，累计处理：{}", currentBatchSize, processed);
 
+                            //加载所有设备类型
+                            Map<String, String> typeNameIdMap = hotelFacilityTypeMapper.selectList(null).stream().collect(Collectors.toMap(
+                                    HotelFacilityType::getName,
+                                    HotelFacilityType::getId
+                            ));
+
                             Map<String, HotelFacilityType> hotelFacilityTypeNameMap = new HashMap<>();
+
                             List<HotelFacility> hotelFacilities = new ArrayList<>();
                             Set<String> existHotelIds = new HashSet<>(); //当前批次数据的hotelIds
 
@@ -150,7 +152,7 @@ public class HotelFacilityImportTaskStrategy implements HotelImportTaskStrategy 
 
                                 existHotelIds.add(hotelId);
 
-                                // 分类处理 - 修复bug: 应该用parentCategory作为key
+                                // 分类处理
                                 if (typeNameIdMap.get(parentCategory) == null && hotelFacilityTypeNameMap.get(parentCategory) == null) {
                                     HotelFacilityType hotelFacilityType = new HotelFacilityType();
                                     hotelFacilityType.setName(parentCategory);

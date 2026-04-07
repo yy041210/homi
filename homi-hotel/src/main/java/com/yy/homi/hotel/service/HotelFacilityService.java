@@ -3,6 +3,7 @@ package com.yy.homi.hotel.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.HotelFacilityPageListReqDTO;
+import com.yy.homi.hotel.domain.dto.request.HotelFacilityUpdateReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelFacility;
 
 import java.util.List;
@@ -47,5 +48,7 @@ public interface HotelFacilityService extends IService<HotelFacility> {
     R changeStatus(String id);
 
     R getHotelFacilityFilters();
+
+    R updateFacilityById(HotelFacilityUpdateReqDTO reqDTO);
 
 }
