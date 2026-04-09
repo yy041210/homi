@@ -1,6 +1,8 @@
 package com.yy.homi.rbac.controller;
 
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.rbac.domain.dto.request.AddRoleMenusReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RoleInsertReqDTO;
 import com.yy.homi.rbac.domain.dto.request.RolePageListReqDTO;
@@ -45,13 +47,13 @@ public class SysRoleController {
 
     //根据id获取角色信息
     @Operation(summary = "获取角色详细信息")
-
     @GetMapping("/getRoleInfo")
     public R getRoleInfo(@RequestParam("id")  @NotBlank(message = "角色id不能空") String id){
         return sysRoleService.getRoleInfo(id);
     }
 
     //新增角色
+    @AutoLog(title = "角色管理-新增角色",businessType = BusinessType.INSERT)
     @PostMapping("/insertRole")
     @Operation(summary = "新增角色")
     public R insertRole(@Validated @RequestBody RoleInsertReqDTO roleInsertReqDTO){
@@ -59,6 +61,7 @@ public class SysRoleController {
     }
 
     //修改角色
+    @AutoLog(title = "角色管理-修改角色",businessType = BusinessType.UPDATE)
     @Operation(summary = "修改角色")
     @PostMapping("/updateRoleById")
     public R updateRole(@Validated @RequestBody RoleUpdateReqDTO roleUpdateReqDTO){
@@ -66,6 +69,7 @@ public class SysRoleController {
     }
 
     //根据id删除角色
+    @AutoLog(title = "角色管理-根据id删除角色",businessType = BusinessType.DELETE)
     @Operation(summary = "根据id删除角色")
     @GetMapping("/deleteRoleById")
     public R deleteRoleById(@RequestParam("id") @NotBlank(message = "角色id不能空") String id){
@@ -73,6 +77,7 @@ public class SysRoleController {
     }
 
     //启用停用
+    @AutoLog(title = "角色管理-启用停用角色",businessType = BusinessType.UPDATE)
     @GetMapping("/changeStatus")
     public R changeStatus(@RequestParam("id") @NotBlank(message = "角色id不能空") String id){
         return sysRoleService.changeStatus(id);
@@ -84,18 +89,21 @@ public class SysRoleController {
             @Parameter(name = "roleId", description = "角色ID", required = true),
             @Parameter(name = "menuId", description = "菜单ID", required = true)
     })
+    @AutoLog(title = "角色管理-给角色分配菜单权限",businessType = BusinessType.UPDATE)
     @PostMapping("/addRoleMenuRelation")
     public R addRoleMenuRelation(@Validated @RequestBody AddRoleMenusReqDTO addRoleMenusReqDTO){
         return sysRoleService.addRoleMenuRelation(addRoleMenusReqDTO);
     }
 
     //根据菜单id查询关联的角色信息
+    @AutoLog(title = "角色管理-根据菜单id查询关联的角色信息",businessType = BusinessType.SELECT)
     @GetMapping("/getRelatedRolesByMenuId")
     public R getRelatedRolesByMenuId(@RequestParam("menuId") @NotBlank String menuId){
         return sysRoleService.getRelatedRolesByMenuId(menuId);
     }
 
     //删除角色和菜单的关联关系
+    @AutoLog(title = "角色管理-删除角色和菜单的关联关系",businessType = BusinessType.DELETE)
     @GetMapping("/removeRoleMenuRelation")
     public R removeRoleMenuRelation(@RequestParam("roleId") @NotBlank String roleId,@RequestParam("menuId") @NotBlank String menuId){
         return sysRoleMenuService.removeRoleMenuRelation(roleId,menuId);

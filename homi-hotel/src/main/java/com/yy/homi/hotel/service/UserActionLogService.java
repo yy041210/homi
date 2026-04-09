@@ -3,6 +3,7 @@ package com.yy.homi.hotel.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.UserActionLogInsertReqDTO;
+import com.yy.homi.hotel.domain.dto.request.UserActionLogPageListReqDTO;
 import com.yy.homi.hotel.domain.entity.UserActionLog;
 
 import java.util.Date;
@@ -46,4 +47,9 @@ public interface UserActionLogService extends IService<UserActionLog>{
 
     R getLatestOne();
 
+    R pageList(UserActionLogPageListReqDTO reqDTO);
+
+    R getTodayViewCount();
+
+    R getTodayCtripCount();
 }

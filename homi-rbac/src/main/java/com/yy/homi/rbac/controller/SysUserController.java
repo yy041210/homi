@@ -31,6 +31,12 @@ public class SysUserController {
     @Autowired
     private SysUserRoleService sysUserRoleService;
 
+    @GetMapping("/count")
+    public R count(){
+        return R.ok(sysUserService.count());
+    }
+
+
     //分页查询用户列表
     @Operation(summary = "分页查询用户列表")
     @PostMapping("/pageList")
@@ -48,6 +54,7 @@ public class SysUserController {
     }
 
     //新增用户
+    @AutoLog(title = "用户管理-新增用户",businessType = BusinessType.INSERT)
     @Operation(summary = "新增系统用户")
     @PostMapping("/insertUser")
     public R insertUser(@Validated @RequestBody UserInsertReqDTO userInsertReqDTO) {
@@ -55,6 +62,7 @@ public class SysUserController {
     }
 
     //修改用户
+    @AutoLog(title = "用户管理-修改用户",businessType = BusinessType.UPDATE)
     @Operation(summary = "修改用户信息")
     @PostMapping("/updateUserById")
     public R updateUser(@Validated @RequestBody UserUpdateReqDTO userUpdateReqDTO) {
@@ -62,6 +70,7 @@ public class SysUserController {
     }
 
     //根据id删除用户
+    @AutoLog(title = "用户管理-根据ID删除用户",businessType = BusinessType.DELETE)
     @Operation(summary = "根据ID删除用户")
     @GetMapping("/deleteUserById")
     public R deleteUserById(@RequestParam("id") @NotBlank(message = "用户id不能为空") String id) {
@@ -69,6 +78,7 @@ public class SysUserController {
     }
 
     //批量删除用户
+    @AutoLog(title = "用户管理-根据ids批量删除用户",businessType = BusinessType.DELETE)
     @Operation(summary = "批量删除用户")
     @Parameter(name = "ids", description = "用户ID集合")
     @PostMapping("/deleteUsers")
@@ -77,6 +87,7 @@ public class SysUserController {
     }
 
     //启用禁用
+    @AutoLog(title = "用户管理-切换用户状态",businessType = BusinessType.UPDATE)
     @Operation(summary = "切换用户状态", description = "启用/禁用用户")
     @Parameter(name = "id", description = "用户ID", required = true)
     @GetMapping("/changeStatus")
@@ -85,6 +96,7 @@ public class SysUserController {
     }
 
     //查询用户的已分配的角色ids
+    @AutoLog(title = "用户管理-获取用户关联的roleIds",businessType = BusinessType.SELECT)
     @Operation(summary = "获取用户关联的roleIds", description = "获取用户关联的roleIds")
     @Parameter(name = "id", description = "用户ID", required = true)
     @GetMapping("/getRoleIdsByUserId")
@@ -93,6 +105,7 @@ public class SysUserController {
     }
 
     //给用户分配角色
+    @AutoLog(title = "用户管理-分配用户角色",businessType = BusinessType.UPDATE)
     @Operation(summary = "分配用户角色", description = "建立用户与角色的关联关系")
     @PostMapping("/addUserRoleRelation")
     public R addUserRoleRelation(@Validated @RequestBody AddUserRolesReqDTO addUserRolesReqDTO) {
@@ -100,12 +113,14 @@ public class SysUserController {
     }
 
     //根据角色id查询关联的用户
+    @AutoLog(title = "用户管理-根据角色id查询关联的用户",businessType = BusinessType.SELECT)
     @GetMapping("/getRelatedUsersByRoleId")
     public R getRelatedUsersByRoleId(@RequestParam("roleId") @NotBlank String roleId) {
         return sysUserService.getRelatedUsersByRoleId(roleId);
     }
 
     //删除用户和角色的关联关系
+    @AutoLog(title = "用户管理-删除用户和角色的关联关系",businessType = BusinessType.DELETE)
     @GetMapping("/removeUserRoleRelation")
     public R removeUserRoleRelation(@RequestParam("userId") @NotBlank String userId, @RequestParam("roleId") @NotBlank String roleId) {
         return sysUserRoleService.removeUserRoleRelation(userId, roleId);

@@ -1,7 +1,9 @@
 package com.yy.homi.hotel.controller;
 
 import cn.hutool.core.util.StrUtil;
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.hotel.domain.dto.request.HotelFacilityPageListReqDTO;
 import com.yy.homi.hotel.domain.dto.request.HotelFacilityUpdateReqDTO;
 import com.yy.homi.hotel.service.HotelFacilityService;
@@ -27,12 +29,14 @@ public class HotelFacilityController {
         return hotelFacilityService.pageList(reqDTO);
     }
 
+    @AutoLog(title = "酒店设备列表-启用禁用酒店设备",businessType = BusinessType.UPDATE)
     @GetMapping("/changeStatus")
     public R changeStatus(@RequestParam("id") @NotBlank(message = "设备id不能为空！") String id) {
         return hotelFacilityService.changeStatus(id);
     }
 
     @Operation(summary = "根据id删除酒店设备")
+    @AutoLog(title = "酒店设备列表-根据id删除酒店设备",businessType = BusinessType.DELETE)
     @GetMapping("/deleteById")
     public R deleteById(@RequestParam("id") @NotBlank(message = "设备id不能为空！") String id) {
         if (StrUtil.isBlank(id)) {
@@ -49,6 +53,7 @@ public class HotelFacilityController {
     }
 
     @Operation(summary = "根据id修改酒店设施")
+    @AutoLog(title = "酒店设备列表-根据id修改酒店设施",businessType = BusinessType.UPDATE)
     @PostMapping("/updateById")
     public R updateById(@Validated @RequestBody HotelFacilityUpdateReqDTO reqDTO){
         return hotelFacilityService.updateFacilityById(reqDTO);

@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.yy.homi.common.constant.RabbitMqConstants;
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.common.domain.to.SysUserCache;
@@ -15,6 +16,7 @@ import com.yy.homi.common.enums.hotel.AlbumCategoryEnum;
 import com.yy.homi.common.enums.hotel.AlbumSourceEnum;
 import com.yy.homi.hotel.domain.convert.UserActionLogConverter;
 import com.yy.homi.hotel.domain.dto.request.UserActionLogInsertReqDTO;
+import com.yy.homi.hotel.domain.dto.request.UserActionLogPageListReqDTO;
 import com.yy.homi.hotel.domain.entity.HotelAlbum;
 import com.yy.homi.hotel.domain.entity.HotelBase;
 import com.yy.homi.hotel.domain.entity.HotelStats;
@@ -32,8 +34,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -547,6 +552,59 @@ public class UserActionLogServiceImpl extends ServiceImpl<UserActionLogMapper, U
 
         return R.ok(result);
 
+    }
+
+    @Override
+    public R pageList(UserActionLogPageListReqDTO reqDTO) {
+        // 1. 开启分页
+        PageHelper.startPage(reqDTO.getPageNum(), reqDTO.getPageSize());
+
+        // 2. 执行查询 (MyBatis-Plus 的 selectList 或自定义 Mapper 方法)
+        List<UserActionLog> list = userActionLogMapper.selectList(
+                new LambdaQueryWrapper<UserActionLog>()
+                        .eq(StringUtils.hasText(reqDTO.getUserId()), UserActionLog::getUserId, reqDTO.getUserId())
+                        .like(StringUtils.hasText(reqDTO.getHotelName()), UserActionLog::getHotelName, reqDTO.getHotelName())
+                        .eq(StringUtils.hasText(reqDTO.getActionType()), UserActionLog::getActionType, reqDTO.getActionType())
+                        .orderByDesc(UserActionLog::getCreateTime) // 按时间倒序
+        );
+
+        // 3. 封装分页结果
+        PageInfo<UserActionLog> pageInfo = new PageInfo<>(list);
+
+        // 4. 返回 R 对象
+        return R.ok(pageInfo);
+    }
+
+    @Override
+    public R getTodayViewCount() {
+        // 1. 获取今天的开始时间 (00:00:00)
+        LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        // 2. 获取今天的结束时间 (23:59:59)
+        LocalDateTime endOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
+
+        // 3. 查询今日浏览行为的数量
+        Long count = this.lambdaQuery()
+                .eq(UserActionLog::getActionType, UserActionLog.VIEW_ACTION) // 过滤浏览行为
+                .between(UserActionLog::getCreateTime, startOfDay, endOfDay) // 过滤时间范围
+                .count();
+
+        return R.ok(count != null ? count : 0);
+    }
+
+    @Override
+    public R getTodayCtripCount() {
+        // 1. 获取今天的开始时间 (00:00:00)
+        LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        // 2. 获取今天的结束时间 (23:59:59)
+        LocalDateTime endOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
+
+        // 3. 查询今日浏览行为的数量
+        Long count = this.lambdaQuery()
+                .eq(UserActionLog::getActionType, UserActionLog.CLICK_TRIP_ACTION) // 过滤预定行为
+                .between(UserActionLog::getCreateTime, startOfDay, endOfDay) // 过滤时间范围
+                .count();
+
+        return R.ok(count != null ? count : 0);
     }
 
     private Map<String, Object> createSeriesMap(String name, int[] data) {

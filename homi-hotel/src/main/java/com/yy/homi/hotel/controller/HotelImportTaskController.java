@@ -1,7 +1,9 @@
 package com.yy.homi.hotel.controller;
 
 import cn.hutool.core.util.StrUtil;
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.hotel.domain.dto.request.HotelImportTaskPageListReqDTO;
 import com.yy.homi.hotel.service.HotelImportTaskService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +30,7 @@ public class HotelImportTaskController {
      *
      * @return 任务ID
      */
+    @AutoLog(title = "数据导入任务管理-新建导入任务",businessType = BusinessType.INSERT)
     @PostMapping("/insertHotelImportTask")
     public R insertHotelImportTask(@RequestParam("taskName") String taskName, @RequestParam("taskType") @NotBlank String taskType, @RequestParam("file") MultipartFile file) {
         return hotelImportTaskService.insertHotelImportTask(taskName, taskType, file);
@@ -49,6 +52,7 @@ public class HotelImportTaskController {
     }
 
     @Operation(summary = "根据ids批量删除任务")
+    @AutoLog(title = "数据导入任务管理-根据ids批量删除任务",businessType = BusinessType.DELETE)
     @PostMapping("/deleteByIds")
     public R deleteByIds(@Validated @RequestBody @NotEmpty(message = "ids不能为空") List<String> ids ){
         hotelImportTaskService.removeBatchByIds(ids);
@@ -56,6 +60,7 @@ public class HotelImportTaskController {
     }
 
     @Operation(summary = "根据id删除任务")
+    @AutoLog(title = "数据导入任务管理-根据id删除任务",businessType = BusinessType.DELETE)
     @GetMapping("/deleteById")
     public R deleteByIds(@RequestParam("id") @NotBlank(message = "任务id不能为空！") String id){
         if(StrUtil.isNotBlank(id)){

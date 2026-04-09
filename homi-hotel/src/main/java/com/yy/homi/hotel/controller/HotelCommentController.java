@@ -2,7 +2,9 @@ package com.yy.homi.hotel.controller;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.hotel.domain.dto.request.HotelCommentPageListReqDTO;
 import com.yy.homi.hotel.service.HotelCommentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +36,7 @@ public class HotelCommentController {
     }
 
     @Operation(summary = "根据id删除评论")
+    @AutoLog(title = "酒店评论管理-根据id删除评论",businessType = BusinessType.DELETE)
     @GetMapping("/deleteById")
     public R deleteById(@RequestParam("id") @NotBlank(message = "评论id不能为空！") String id) {
         if(StrUtil.isNotBlank(id)){
@@ -43,6 +46,7 @@ public class HotelCommentController {
     }
 
     @Operation(summary = "根据ids批量删除评论")
+    @AutoLog(title = "酒店评论管理-根据ids批量删除评论",businessType = BusinessType.DELETE)
     @PostMapping("/deleteByIds")
     public R deleteByIds(@Validated @RequestBody @NotEmpty List<String> ids){
         if(CollectionUtil.isNotEmpty(ids)){

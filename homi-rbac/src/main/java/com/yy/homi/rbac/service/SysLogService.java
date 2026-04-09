@@ -7,4 +7,6 @@ import com.yy.homi.rbac.domain.dto.request.SysLogPageListReqDTO;
 
 public interface SysLogService extends IService<SysLog> {
     R pageList(SysLogPageListReqDTO reqDTO);
+
+    R getStatisticLine(Long beginTime, Long endTime);
 }

@@ -41,6 +41,7 @@ public class AuthController {
     @Operation(summary = "用户登出接口",description = "用户退出登录")
     @ResponseBody
     @GetMapping("/logout")
+    @AutoLog(title = "系统-用户登出",businessType = BusinessType.OTHER)
     public R logout(@RequestParam("userId") @NotBlank String userId){
         return authService.logout(userId);
     }

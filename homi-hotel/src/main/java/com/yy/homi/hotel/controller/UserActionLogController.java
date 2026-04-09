@@ -2,6 +2,7 @@ package com.yy.homi.hotel.controller;
 
 import com.yy.homi.common.domain.entity.R;
 import com.yy.homi.hotel.domain.dto.request.UserActionLogInsertReqDTO;
+import com.yy.homi.hotel.domain.dto.request.UserActionLogPageListReqDTO;
 import com.yy.homi.hotel.service.UserActionLogService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,12 @@ public class UserActionLogController {
     @Autowired
     private UserActionLogService userActionLogService; // 必须这样写
 
+
+    @PostMapping("/pageList")
+    public R pageList(@RequestBody UserActionLogPageListReqDTO reqDTO) {
+        return userActionLogService.pageList(reqDTO);
+    }
+
     @PostMapping("/insertLog")
     public R insertLog(@Validated @RequestBody UserActionLogInsertReqDTO reqDTO) {
         log.info("userActionLogService is: {}", userActionLogService); // 查看是否为 null
@@ -39,6 +46,22 @@ public class UserActionLogController {
                             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
         return userActionLogService.getViewHistory(userId, pageNum, pageSize);
     }
+    /**
+     * 获取今日浏览总量
+     */
+    @GetMapping("/todayViews")
+    public R getTodayViewCount() {
+        return userActionLogService.getTodayViewCount();
+    }
+
+    /**
+     * 获取今日预定总量
+     */
+    @GetMapping("/todayCtrips")
+    public R getTodayCtripCount() {
+        return userActionLogService.getTodayCtripCount();
+    }
+
 
     @GetMapping("/countViewByUserId")
     public R countViewByUserId(@RequestParam("userId") @NotBlank(message = "用户id不能为空！") String userId) {
@@ -129,7 +152,7 @@ public class UserActionLogController {
 
     @GetMapping("/totalTrend")
     public R getTrend(
-            @RequestParam String userId,
+            @RequestParam(required = false) String userId,
             @RequestParam Long beginTime,
             @RequestParam Long endTime) {
         return userActionLogService.getTotalTrend(userId, beginTime, endTime);

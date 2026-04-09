@@ -1,6 +1,8 @@
 package com.yy.homi.rbac.controller;
 
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.rbac.domain.dto.request.ConditionGetMenuTreeReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuSaveReqDTO;
 import com.yy.homi.rbac.domain.dto.request.MenuPageListReqDTO;
@@ -43,6 +45,7 @@ public class SysMenuController {
     }
 
     //新增菜单
+    @AutoLog(title = "菜单管理-新增菜单权限",businessType = BusinessType.INSERT)
     @Operation(summary = "新增菜单权限")
     @PostMapping("/insertMenu")
     public R insertMenu(@Validated @RequestBody MenuSaveReqDTO menuSaveReqDTO){
@@ -50,6 +53,7 @@ public class SysMenuController {
     }
 
     //修改菜单
+    @AutoLog(title = "菜单管理-根据id修改菜单权限信息",businessType = BusinessType.UPDATE)
     @Operation(summary = "根据id修改菜单权限信息")
     @PostMapping("/updateMenuById")
     public R updateMenu(@Validated @RequestBody MenuSaveReqDTO menuSaveReqDTO){
@@ -58,6 +62,7 @@ public class SysMenuController {
 
     //根据id删除角菜单
     @Operation(summary = "根据id删除菜单权限")
+    @AutoLog(title = "菜单管理-根据id删除菜单权限",businessType = BusinessType.DELETE)
     @GetMapping("/deleteMenuById")
     public R deleteMenuById(@RequestParam("id") @NotBlank(message = "菜单id不能为空!") String id){
         return sysMenuService.deleteMenuById(id);
@@ -65,6 +70,7 @@ public class SysMenuController {
 
     //启用停用
     @Operation(summary = "启用或停用菜单", description = "启用或停用菜单")
+    @AutoLog(title = "菜单管理-启用或停用菜单",businessType = BusinessType.UPDATE)
     @GetMapping("/changeStatus")
     public R changeStatus(@RequestParam("id") @NotBlank(message = "菜单id不能为空!") String id){
         return sysMenuService.changeStatus(id);
@@ -72,6 +78,7 @@ public class SysMenuController {
 
     //隐藏显示
     @Operation(summary = "显示或隐藏菜单", description = "显示或隐藏菜单")
+    @AutoLog(title = "菜单管理-显示或隐藏菜单",businessType = BusinessType.UPDATE)
     @GetMapping("/changeVisible")
     public R changeVisible(@RequestParam("id") @NotBlank(message = "菜单id不能为空!") String id){
         return sysMenuService.changeVisible(id);

@@ -2,7 +2,9 @@ package com.yy.homi.hotel.controller;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.hotel.domain.convert.HotelSurroundingConverter;
 import com.yy.homi.hotel.domain.dto.request.HotelSurroundingPageListReqDTO;
 import com.yy.homi.hotel.domain.dto.request.HotelSurroundingUpdateReqDTO;
@@ -47,6 +49,7 @@ public class HotelSurroundingController {
     /**
      * 保存单条周边数据
      */
+    @AutoLog(title = "酒店周边列表-新增酒店周边",businessType = BusinessType.INSERT)
     @PostMapping("/save")
     public boolean save(@RequestBody HotelSurrounding surrounding) {
         return hotelSurroundingService.save(surrounding);
@@ -62,6 +65,7 @@ public class HotelSurroundingController {
         return hotelSurroundingService.importHotelSurroundingFromCsv(file);
     }
 
+    @AutoLog(title = "酒店周边列表-根据id修改酒店周边",businessType = BusinessType.UPDATE)
     @PostMapping("/updateById")
     public R updateById(@Validated @RequestBody HotelSurroundingUpdateReqDTO reqDTO) {
         HotelSurrounding hotelSurrounding = hotelSurroundingConverter.updateDtoToEntity(reqDTO);
@@ -69,12 +73,14 @@ public class HotelSurroundingController {
         return R.ok("修改成功！");
     }
 
+    @AutoLog(title = "酒店周边列表-根据id删除酒店周边",businessType = BusinessType.DELETE)
     @GetMapping("/deleteById")
     public R deleteById(@RequestParam("id") @NotBlank(message = "周边id不能为空！") String id) {
         hotelSurroundingService.removeById(id);
         return R.ok("删除成功！");
     }
 
+    @AutoLog(title = "酒店周边列表-根据ids批量删除酒店周边",businessType = BusinessType.DELETE)
     @PostMapping("/deleteByIds")
     public R deleteByIds(@RequestBody List<String> ids) {
         if (CollectionUtil.isEmpty(ids)) {

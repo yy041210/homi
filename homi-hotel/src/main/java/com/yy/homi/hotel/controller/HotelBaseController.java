@@ -1,6 +1,8 @@
 package com.yy.homi.hotel.controller;
 
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.hotel.domain.dto.request.HotelBasePageListReqDTO;
 import com.yy.homi.hotel.domain.dto.request.HotelDocPageListReqDTO;
 import com.yy.homi.hotel.domain.dto.request.HotelInsertDTO;
@@ -24,6 +26,11 @@ public class HotelBaseController {
 
     @Autowired
     private HotelBaseService hotelBaseService;
+
+    @GetMapping("/count")
+    public R count(){
+        return R.ok(hotelBaseService.count());
+    }
 
 
     @PostMapping("/importHotelBaseFromJsonCsv")
@@ -68,6 +75,7 @@ public class HotelBaseController {
     }
 
     @Operation(summary = "根据id删除酒店详情（基本信息,设备，房型，图集，简介，评论，附近）")
+    @AutoLog(title = "酒店列表-根据id删除酒店",businessType = BusinessType.DELETE)
     @GetMapping("/deleteById")
     public R deleteById(@RequestParam("id") @NotBlank(message = "酒店id不能为空！") String id){
         return hotelBaseService.deleteById(id);
@@ -75,6 +83,7 @@ public class HotelBaseController {
 
 
 
+    @AutoLog(title = "酒店列表-启用禁用酒店",businessType = BusinessType.UPDATE)
     @GetMapping("/changeStatus")
     public R changeStatus(@RequestParam("id") @NotBlank(message = "酒店id不能为空!") String id){
         return hotelBaseService.changeStatus(id);

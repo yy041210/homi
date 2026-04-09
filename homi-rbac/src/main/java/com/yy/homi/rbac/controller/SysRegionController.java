@@ -1,6 +1,8 @@
 package com.yy.homi.rbac.controller;
 
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.rbac.domain.dto.request.RegionInsertReqDTO;
 import com.yy.homi.rbac.service.SysRegionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,7 @@ public class SysRegionController {
     }
 
     //新增省市区
+    @AutoLog(title = "地区管理-新增省市区",businessType = BusinessType.INSERT)
     @PostMapping("/insertRegion")
     public R insertRegion(@Validated @RequestBody RegionInsertReqDTO reqDTO){
         return sysRegionService.insertRegion(reqDTO);

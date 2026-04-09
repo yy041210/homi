@@ -1,6 +1,8 @@
 package com.yy.homi.rbac.controller;
 
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.rbac.service.SysCityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -34,10 +36,12 @@ public class SysCityController {
         return sysCityService.getAllCities();
     }
 
+    @AutoLog(title = "地区管理-根据id删除城市",businessType = BusinessType.DELETE)
     @GetMapping("/deleteById")
     public R deleteById(@RequestParam("cityId") @NotNull Integer cityId){
         return sysCityService.deleteById(cityId);
     }
+
 
     @GetMapping("/getInfoById")
     public  R getInfoById(@RequestParam("cityId") @NotNull Integer cityId){

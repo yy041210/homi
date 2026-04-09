@@ -1,6 +1,8 @@
 package com.yy.homi.hotel.controller;
 
+import com.yy.homi.common.annotation.AutoLog;
 import com.yy.homi.common.domain.entity.R;
+import com.yy.homi.common.enums.BusinessType;
 import com.yy.homi.hotel.domain.entity.HotelFacilityType;
 import com.yy.homi.hotel.service.HotelFacilityTypeService;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,8 @@ public class HotelFacilityTypeController {
         return hotelFacilityTypeService.listAll();
     }
 
+
+    @AutoLog(title = "酒店设备分类-根据id修改酒店设备分类",businessType = BusinessType.UPDATE)
     @GetMapping("/updateById")
     public R updateById(
             @RequestParam("id") @NotBlank(message = "设备类型id不能为空！") String id,
@@ -37,6 +41,7 @@ public class HotelFacilityTypeController {
         return  R.ok("修改成功！");
     }
 
+    @AutoLog(title = "酒店设备分类-根据id删除酒店设备分类",businessType = BusinessType.DELETE)
     @GetMapping("/deleteById")
     public R deleteById(@RequestParam("id") String id){
         return hotelFacilityTypeService.deleteById(id);
